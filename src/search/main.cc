@@ -45,6 +45,17 @@ int main(int argc, char *argv[]) {
     cout << "IMPORTANT: Assuming that negative effects are always listed first. "
             "(This is guaranteed by the default translator.)" << endl;
 
+    //parsing the landmarks if any
+    string lm_file = opt.get_landmark_file();
+    if(lm_file != "none"){
+        task.using_landmarks = true;
+        cout << "Trying to parse landmarks" << endl;
+        parse_landmarks(lm_file, task);
+        task.initial_state.set_initial_landmarks(task.fact_landmarks, task.action_landmarks);
+    } else {
+        task.using_landmarks = false;
+    }
+
     // Let's create a couple unique_ptr's that deal with mem allocation themselves
     std::unique_ptr<SearchBase> search(SearchFactory::create(opt.get_search_engine(), opt.get_state_representation()));
     std::unique_ptr<Heuristic> heuristic(HeuristicFactory::create(opt.get_evaluator(), task));

@@ -23,6 +23,8 @@ public:
 
   int getArity() const;
 
+  int getIndex() const {return  index;}
+
   const std::vector<int> &getTypes() const;
 
   bool isStaticPredicate() const;

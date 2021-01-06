@@ -13,6 +13,7 @@ class Options {
     std::string search_engine;
     std::string evaluator;
     std::string state_representation;
+    std::string landmark_file;
     unsigned seed;
 
 public:
@@ -26,6 +27,7 @@ public:
             ("generator,g", po::value<std::string>()->required(), "Successor generator method.")
             ("search,s", po::value<std::string>()->required(), "Search engine.")
             ("state-representation,r", po::value<std::string>()->default_value("sparse"), "State representation.")
+            ("landmark,l",po::value<std::string>()->default_value("none"), "Landmark File")
             ;
 
         po::variables_map vm;
@@ -49,6 +51,7 @@ public:
         evaluator = vm["evaluator"].as<std::string>();
         search_engine = vm["search"].as<std::string>();
         state_representation = vm["state-representation"].as<std::string>();
+        landmark_file = vm["landmark"].as<std::string>();
         seed = vm["seed"].as<unsigned>();
 
     }
@@ -71,6 +74,10 @@ public:
 
     const std::string &get_state_representation() const {
         return state_representation;
+    }
+
+    const std::string &get_landmark_file() const {
+        return landmark_file;
     }
 
     unsigned get_seed() const {

@@ -80,6 +80,6 @@ add_executable(search
         algorithms/int_hash_set.h
         algorithms/dynamic_bitset.h
         search_statistics
-        options.h open_lists/greedy_open_list.h)
+        options.h open_lists/greedy_open_list.h heuristics/landmark_heuristic.cc heuristics/landmark_heuristic.h)
 
 target_link_libraries(search LINK_PUBLIC ${Boost_LIBRARIES})

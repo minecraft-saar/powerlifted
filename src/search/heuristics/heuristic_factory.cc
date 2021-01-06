@@ -2,6 +2,7 @@
 #include "heuristic_factory.h"
 #include "blind_heuristic.h"
 #include "goalcount.h"
+#include "landmark_heuristic.h"
 
 #include <iostream>
 
@@ -16,7 +17,9 @@ Heuristic *HeuristicFactory::create(const std::string &method, const Task &task)
     else if (boost::iequals(method, "goalcount")) {
         return new Goalcount;
     }
-    else {
+    else if (boost::iequals(method, "landmark")) {
+        return new landmark_heuristic;
+    } else {
         std::cerr << "Invalid heuristic \"" << method << "\"" << std::endl;
         exit(-1);
     }

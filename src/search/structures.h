@@ -103,5 +103,22 @@ struct Atom {
     bool negated;
 };
 
+struct ActionLm {
+    ActionLm(std::string &name, int arity, std::vector<Argument> &tuples) : name(std::move(name)), arity(arity), arguments(std::move(tuples)){}
+    std::string name;
+    unsigned int arity;
+    std::vector<Argument> arguments;
+
+};
+
+struct FactLm {
+    FactLm(std::string &name, int arity, bool negated, int index, std::vector<Argument> &tuples) : name(std::move(name)), arity(arity), negated(negated), index(index), arguments(std::move(tuples)){}
+    std::string name;
+    unsigned int arity;
+    bool negated;
+    int index;
+    std::vector<Argument> arguments;
+};
+
 
 #endif //SEARCH_STRUCTURES_H

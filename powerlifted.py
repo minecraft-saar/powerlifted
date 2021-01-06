@@ -27,13 +27,16 @@ def parse_options():
                         default=None, help='Search algorithm', choices=("naive", "gbfs"),
                         required=True)
     parser.add_argument('-e', '--heuristic', dest='heuristic', action='store',
-                        default=None, choices=("blind", "goalcount"),
+                        default=None, choices=("blind", "goalcount", "landmark"),
                         help='Heuristic to guide the search (ignore in case of blind search)',
                         required=True)
     parser.add_argument('-g', '--generator', dest='generator', action='store',
                         default=None, help='Successor generator method',
                         choices=('yannakakis', 'join', 'random_join', 'ordered_join', 'inverse_ordered_join', 'full_reducer'),
                         required=True)
+    parser.add_argument('-l', '--landmark', dest='landmark', action='store',
+                        default=None, help='Landmark file',
+                        required=False)
     parser.add_argument('--state', action='store', help='Successor generator method',
                         default="sparse", choices=("sparse", "extensional"))
     parser.add_argument('--seed', action='store', help='Random seed.',
@@ -112,6 +115,7 @@ def main():
            '-e', options.heuristic,
            '-g', options.generator,
            '-r', options.state,
+           '-l', options.landmark,
            '--seed', str(options.seed)]
 
     print(f'Executing "{" ".join(cmd)}"')

@@ -70,6 +70,11 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
             for (const LiftedOperatorId& op_id:applicable) {
                 DBState s = generator.generate_successor(op_id, action, state);
 
+                //handeling landmark tracking
+                if(task.using_landmarks) {
+                    s.set_landmarks(state, action,
+                                    op_id); // op_id beinhaltet die IDs für die Action und die gegründeten Parameter
+                }
                 int dist = g + action.get_cost();
                 int new_h = heuristic.compute_heuristic(s, task);
                 statistics.inc_evaluations();

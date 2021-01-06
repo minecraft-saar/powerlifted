@@ -2,11 +2,15 @@
 #include "action_schema.h"
 #include "goal_condition.h"
 #include "task.h"
+#include "structures.h"
+#include "predicate.h"
 
 #include <boost/algorithm/string.hpp>
 
 #include <iostream>
 #include <vector>
+#include <string>
+#include <sstream>
 
 using namespace std;
 
@@ -19,8 +23,7 @@ using namespace std;
  * @return
  */
 
-bool parse(Task &task, const ifstream &in)
-{
+bool parse(Task &task, const ifstream &in) {
 
     // String used to guarantee consistency throughout the parsing
     string canary;
@@ -85,8 +88,7 @@ bool parse(Task &task, const ifstream &in)
     return true;
 }
 
-void parse_action_schemas(Task &task, int number_action_schemas)
-{
+void parse_action_schemas(Task &task, int number_action_schemas) {
     vector<ActionSchema> actions;
     for (int i = 0; i < number_action_schemas; ++i) {
         string name;
@@ -96,9 +98,9 @@ void parse_action_schemas(Task &task, int number_action_schemas)
         vector<Atom> preconditions, effects;
         vector<pair<int, int>> inequalities;
         vector<bool> positive_nul_precond(task.predicates.size(), false),
-            negative_nul_precond(task.predicates.size(), false),
-            positive_nul_eff(task.predicates.size(), false),
-            negative_nul_eff(task.predicates.size(), false);
+                negative_nul_precond(task.predicates.size(), false),
+                positive_nul_eff(task.predicates.size(), false),
+                negative_nul_eff(task.predicates.size(), false);
         for (int j = 0; j < args; ++j) {
             string param_name;
             int index, type;
@@ -133,19 +135,16 @@ void parse_action_schemas(Task &task, int number_action_schemas)
                     continue;
                 }
                 inequalities.emplace_back(obj1, obj2);
-            }
-            else {
+            } else {
                 for (int k = 0; k < arguments_size; ++k) {
                     char c;
                     int obj_index;
                     cin >> c >> obj_index;
                     if (c == 'c') {
                         arguments.emplace_back(obj_index, true);
-                    }
-                    else if (c == 'p') {
+                    } else if (c == 'p') {
                         arguments.emplace_back(obj_index, false);
-                    }
-                    else {
+                    } else {
                         cerr << "Error while reading action schema " << name
                              << ". Argument is neither constant or "
                                 "object"
@@ -177,11 +176,9 @@ void parse_action_schemas(Task &task, int number_action_schemas)
                 cin >> c >> obj_index;
                 if (c == 'c') {
                     arguments.emplace_back(obj_index, true);
-                }
-                else if (c == 'p') {
+                } else if (c == 'p') {
                     arguments.emplace_back(obj_index, false);
-                }
-                else {
+                } else {
                     cerr << "Error while reading action schema " << name
                          << ". Argument is neither constant or "
                             "object"
@@ -207,8 +204,7 @@ void parse_action_schemas(Task &task, int number_action_schemas)
     task.initialize_action_schemas(actions);
 }
 
-void parse_goal(Task &task, int goal_size)
-{
+void parse_goal(Task &task, int goal_size) {
     vector<AtomicGoal> goals;
     unordered_set<int> positive_nullary_goals, negative_nullary_goals;
     for (int i = 0; i < goal_size; ++i) {
@@ -231,8 +227,7 @@ void parse_goal(Task &task, int goal_size)
     task.create_goal_condition(goals, positive_nullary_goals, negative_nullary_goals);
 }
 
-void parse_initial_state(Task &task, int initial_state_size)
-{
+void parse_initial_state(Task &task, int initial_state_size) {
     for (int i = 0; i < initial_state_size; ++i) {
         string name;
         int index;
@@ -255,8 +250,7 @@ void parse_initial_state(Task &task, int initial_state_size)
     }
 }
 
-void parse_objects(Task &task, int number_objects)
-{
+void parse_objects(Task &task, int number_objects) {
     for (int i = 0; i < number_objects; ++i) {
         string name;
         int index;
@@ -268,8 +262,7 @@ void parse_objects(Task &task, int number_objects)
     }
 }
 
-void parse_predicates(Task &task, int number_predicates)
-{
+void parse_predicates(Task &task, int number_predicates) {
     for (int j = 0; j < number_predicates; ++j) {
         string predicate_name;
         int index;
@@ -285,8 +278,7 @@ void parse_predicates(Task &task, int number_predicates)
     }
 }
 
-void parse_types(Task &task, int number_types)
-{
+void parse_types(Task &task, int number_types) {
     for (int i = 0; i < number_types; ++i) {
         string type_name;
         int type_index;
@@ -295,8 +287,7 @@ void parse_types(Task &task, int number_types)
     }
 }
 
-bool is_sparse_representation(string &canary)
-{
+bool is_sparse_representation(string &canary) {
     cin >> canary;
     if (canary != "SPARSE-REPRESENTATION") {
         cerr << "Representation is not sparse. Not supported." << endl;
@@ -305,8 +296,7 @@ bool is_sparse_representation(string &canary)
     return true;
 }
 
-bool is_next_section_correct(string &canary, const string &expected)
-{
+bool is_next_section_correct(string &canary, const string &expected) {
     if (canary != expected) {
         cerr << "Error while reading " << expected << " section." << endl;
         output_error(canary);
@@ -315,8 +305,7 @@ bool is_next_section_correct(string &canary, const string &expected)
     return true;
 }
 
-void copy_next_n_values(int n, vector<int> &v)
-{
+void copy_next_n_values(int n, vector<int> &v) {
     for (int i = 0; i < n; ++i) {
         int x;
         cin >> x;
@@ -324,7 +313,121 @@ void copy_next_n_values(int n, vector<int> &v)
     }
 }
 
-void output_error(string &msg)
-{
+void output_error(string &msg) {
     cerr << "String read was \'" << msg << "\' instead of the respective canary." << endl;
+}
+
+
+void parse_landmarks(std::string input_file, Task &task) {
+    cout << "Start parsing Landmarks" << endl;
+    cout << "file name: " << input_file << endl;
+    ifstream file(input_file);
+    if (!file.is_open()) {
+        cerr << "Lanmarkfile could not be opened" << endl;
+        abort();
+    }
+    std::string line;
+    int num_lms = 0;
+    int lms_read = 0;
+    while (std::getline(file, line)) {
+        if (line.empty()) {
+            continue;
+        } else if (line.at(0) == ';') {
+            continue;
+        } else if (line.at(0) == 'L') {
+            std::getline(file, line);
+            std::string::size_type sz; // alias for size_t so the string conversion works
+            num_lms = std::stoi(line, &sz);
+            break;
+        }
+    }
+    //actual information
+    while (std::getline(file, line)) {
+        if(line.at(0) == ';' || line.empty()){
+            continue; //end of file reached
+        }
+        stringstream line_as_stream(line);
+        int num_of_preds;
+        bool actionlm, and_con;
+        std::string info;
+        //parsing bool flags at beginning
+        line_as_stream >> actionlm >> std::ws >> and_con  >> std::ws >> num_of_preds >> std::ws ;
+        //getting at info about predicate/action in brackets
+        info = line_as_stream.str().substr(line_as_stream.tellg());
+        info.erase(0, 1); //remove opening bracket
+        info.erase( info.end()-1); //remove closing bracket
+        std::vector<std::string> arguments;
+        string atom = "";
+        //cout << "Inhalt einer Klammer " << info << endl;
+        for (auto x : info) { //parsing predicate/action into single atom strings
+            if (x == ' ') {
+                arguments.push_back(atom);
+                //cout << "predicate names after parsing " << atom << endl;
+                atom = "";
+            } else {
+                atom = atom + x;
+            }
+        }
+        arguments.push_back(atom);
+        if (actionlm) {
+            create_action_lm(arguments, and_con, num_of_preds, task);
+        } else {
+            create_fact_lm(arguments, and_con, num_of_preds, task);
+        }
+        lms_read++;
+        if (lms_read >= num_lms) {
+            break;
+        }
+
+    }
+}
+
+void create_fact_lm(std::vector<std::string> &arguments, bool and_con, int num_of_preds, Task &task) {
+    assert(num_of_preds == 1);
+    bool negated = false;
+
+    if (arguments[0][0] == '!') {
+        negated = true;
+        arguments[0].erase(0, 1);
+    }
+    int arity = arguments.size() - 1;
+    std::vector<Argument> formated_args;
+    for (unsigned int i = 1; i < arguments.size(); i++) {
+        string name = arguments[i];
+        auto it = find_if(task.objects.begin(), task.objects.end(), [&name](const Object &obj) {
+            return name == obj.getName();
+        });
+        assert(it != task.objects.end());
+        int index = it->getIndex();
+        Argument arg(index, true);
+        formated_args.push_back(arg);
+    }
+    string pred_name = arguments[0];
+    auto it = find_if(task.predicates.begin(), task.predicates.end(), [&pred_name](const Predicate &pred) {
+        return pred_name == pred.getName();
+    });
+    int pred_id = it->getIndex();
+
+    FactLm f(pred_name, arity, negated, pred_id, formated_args);
+    //cout << "setting Landmark Name: " << f.name << endl;
+    task.fact_landmarks.push_back(f);
+    //cout << task.fact_landmarks[task.fact_landmarks.size()-1].name << endl;
+}
+
+void create_action_lm(std::vector<string> &arguments, bool and_con, int num_of_preds, Task &task) {
+    assert(num_of_preds == 1);
+    int arity = arguments.size() - 1;
+    std::vector<Argument> formated_args;
+    for (unsigned int i = 1; i < arguments.size(); i++) {
+        string name = arguments[i];
+        auto it = find_if(task.objects.begin(), task.objects.end(), [&name](const Object &obj) {
+            return name == obj.getName();
+        });
+        assert(it != task.objects.end());
+        int index = it->getIndex();
+        Argument arg(index, true);
+        formated_args.push_back(arg);
+    }
+    ActionLm actionlm(arguments[0], arity, formated_args);
+    task.action_landmarks.push_back(actionlm);
 }

@@ -2,6 +2,9 @@
 #define SEARCH_STATE_H
 
 #include "../structures.h"
+#include "../action_schema.h"
+#include "../action.h"
+
 
 #include <algorithm>
 #include <tuple>
@@ -19,7 +22,7 @@
  * ground atom of the task.
  * For motivation on the use of sparse state representation,
  * see A. B. Correa, 2019.'Planning using Lifted Task Representations',
- * M.Sc. thesis. University of Basel.
+ * M.Sc. thesis. University of Basel
  *
  * @see state_packer.h
  *
@@ -28,6 +31,8 @@ class DBState {
 
     std::vector<Relation> relations;
     std::vector<bool> nullary_atoms;
+    std::vector<ActionLm> action_landmarks;
+    std::vector<FactLm> predicate_landmarks;
 
 public:
 
@@ -65,6 +70,26 @@ public:
     }
 
     void add_tuple(int relation, const GroundAtom &args);
+
+    void set_landmarks(DBState parent, ActionSchema action, const LiftedOperatorId& op_id);
+
+    void set_initial_landmarks(std::vector<FactLm> predicate_landmarks, std::vector<ActionLm> action_landmarks);
+
+    const std::vector<ActionLm> &get_action_landmarks() const {
+        return action_landmarks;
+    }
+
+    //std::vector<FactLm> &get_predicate_landmarks() const {
+    //    return predicate_landmarks;
+    //}
+
+     int num_of_predicate_landmarks() const {
+        return predicate_landmarks.size();
+    }
+
+    int num_of_action_landmarks() const {
+        return action_landmarks.size();
+    }
 
     bool operator==(const DBState &other) const {
         return nullary_atoms==other.nullary_atoms && relations==other.relations;
