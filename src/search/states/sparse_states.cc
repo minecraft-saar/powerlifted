@@ -104,6 +104,13 @@ SparsePackedState SparseStatePacker::pack(const DBState &state) const {
         sort(packed_relation.begin(), packed_relation.end());
         packed_state.packed_relations.push_back(packed_relation);
     }
+    for(auto const &landmark : state.get_action_landmarks()){
+        packed_state.action_landmarks.push_back(landmark);
+    }
+    for(auto const &landmark : state.get_predicate_landmarks()){
+        packed_state.predicate_landmarks.push_back(landmark);
+    }
+
     return packed_state;
 }
 
@@ -118,7 +125,15 @@ DBState SparseStatePacker::unpack(const SparsePackedState &packed_state) const {
         }
         relations.emplace_back(packed_state.predicate_symbols[i], move(tuples));
     }
-    return DBState(move(relations), move(nullary_atoms));
+    std::vector<FactLm> p_lms;
+    std::vector<ActionLm> a_lms;
+    for(auto &landmark : packed_state.action_landmarks){
+        a_lms.push_back(landmark);
+    }
+    for(auto &landmark : packed_state.predicate_landmarks){
+        p_lms.push_back(landmark);
+    }
+    return DBState(move(relations), move(nullary_atoms), move(p_lms), move(a_lms));
 }
 
 long SparseStatePacker::pack_tuple(const std::vector<int> &tuple, int predicate_index) const {

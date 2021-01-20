@@ -320,7 +320,6 @@ void output_error(string &msg) {
 
 void parse_landmarks(std::string input_file, Task &task) {
     cout << "Start parsing Landmarks" << endl;
-    cout << "file name: " << input_file << endl;
     ifstream file(input_file);
     if (!file.is_open()) {
         cerr << "Lanmarkfile could not be opened" << endl;
@@ -394,6 +393,11 @@ void create_fact_lm(std::vector<std::string> &arguments, bool and_con, int num_o
     std::vector<Argument> formated_args;
     for (unsigned int i = 1; i < arguments.size(); i++) {
         string name = arguments[i];
+        if(name == "???"){
+            Argument arg(i-1, false);
+            formated_args.push_back(arg);
+            continue;
+        }
         auto it = find_if(task.objects.begin(), task.objects.end(), [&name](const Object &obj) {
             return name == obj.getName();
         });

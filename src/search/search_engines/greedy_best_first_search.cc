@@ -44,6 +44,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
         if (node.status == SearchNode::Status::CLOSED) {
             continue;
         }
+        //cout << "Node is being expanded, heuristic value: " << h << endl;
         node.close();
         statistics.report_f_value_progress(h); // In GBFS f = h.
         statistics.inc_expanded();

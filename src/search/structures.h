@@ -48,7 +48,6 @@ struct Argument {
     bool constant;
 };
 
-
 /**
  * @brief A relation is a "table" with set of tuples corresponding to some
  * predicate in a state.

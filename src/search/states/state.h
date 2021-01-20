@@ -31,8 +31,8 @@ class DBState {
 
     std::vector<Relation> relations;
     std::vector<bool> nullary_atoms;
-    std::vector<ActionLm> action_landmarks;
     std::vector<FactLm> predicate_landmarks;
+    std::vector<ActionLm> action_landmarks;
 
 public:
 
@@ -42,6 +42,11 @@ public:
 
     DBState(std::vector<Relation> &&relations, std::vector<bool> &&nullary_atoms) :
         relations(std::move(relations)), nullary_atoms(std::move(nullary_atoms)) {
+        // Explicit state constructor
+    }
+
+    DBState(std::vector<Relation> &&relations, std::vector<bool> &&nullary_atoms, std::vector<FactLm> &&predicate_lms, std::vector<ActionLm> &&action_lms) :
+            relations(std::move(relations)), nullary_atoms(std::move(nullary_atoms)), predicate_landmarks(std::move(predicate_lms)), action_landmarks(std::move(action_lms)) {
         // Explicit state constructor
     }
 
@@ -75,13 +80,17 @@ public:
 
     void set_initial_landmarks(std::vector<FactLm> predicate_landmarks, std::vector<ActionLm> action_landmarks);
 
-    const std::vector<ActionLm> &get_action_landmarks() const {
+    bool fact_lm_equal_to_ground_effect(FactLm factLm, Atom effect, LiftedOperatorId grounded_action);
+
+    bool action_lm_equal_to_action(ActionLm actionLm, ActionSchema action, LiftedOperatorId grounded_action);
+
+     const std::vector<ActionLm>& get_action_landmarks() const {
         return action_landmarks;
     }
 
-    //std::vector<FactLm> &get_predicate_landmarks() const {
-    //    return predicate_landmarks;
-    //}
+     const std::vector<FactLm>& get_predicate_landmarks() const{
+        return predicate_landmarks;
+    }
 
      int num_of_predicate_landmarks() const {
         return predicate_landmarks.size();
@@ -90,6 +99,9 @@ public:
     int num_of_action_landmarks() const {
         return action_landmarks.size();
     }
+
+    bool check_presence_of_fact_lm(FactLm factlm);
+
 
     bool operator==(const DBState &other) const {
         return nullary_atoms==other.nullary_atoms && relations==other.relations;
