@@ -109,7 +109,10 @@ def main():
                      options.domain, options.instance, '--output-file', options.translator_file])
 
     # Invoke the C++ search component
-    cmd = [os.path.join(build_dir, 'search', 'search'),
+    cmd = []
+    #if options.debug:
+    #	cmd += ['gdbserver', ':1234']
+    cmd += [os.path.join(build_dir, 'search', 'search'),
            '-f', options.translator_file,
            '-s', options.search,
            '-e', options.heuristic,

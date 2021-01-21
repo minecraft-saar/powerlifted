@@ -46,29 +46,23 @@ void DBState::set_landmarks(DBState parent, ActionSchema action, const LiftedOpe
     //int previous_landmark_count = predicate_landmarks.size();
     //for (const Atom &effect : action.get_effects()) {
 
-        for (auto landmark = predicate_landmarks.begin(); landmark < predicate_landmarks.end(); ) {
-            bool is_present = check_presence_of_fact_lm(*landmark);
-            //bool is_present = fact_lm_equal_to_ground_effect(*landmark, effect, op_id);
-            if(is_present) {
-                landmark = predicate_landmarks.erase(landmark);
-                continue;
-            }
-            landmark++;
+    for (auto landmark = predicate_landmarks.begin(); landmark < predicate_landmarks.end();) {
+        bool is_present = check_presence_of_fact_lm(*landmark);
+        //bool is_present = fact_lm_equal_to_ground_effect(*landmark, effect, op_id);
+        if (is_present) {
+            landmark = predicate_landmarks.erase(landmark);
+            continue;
         }
-    /*
-        predicate_landmarks.erase(std::remove_if(predicate_landmarks.begin(),
-                                                 predicate_landmarks.end(),
-                                                 [& effect, op_id, this](auto landmark) {
-                                                     return fact_lm_equal_to_ground_effect(landmark, effect, op_id);
-                                                 }));*/
+        landmark++;
+    }
     //}
     /*if(previous_landmark_count != 0){
         cout << "Parent Landmark count: " << previous_landmark_count << " child landmark count: "<< predicate_landmarks.size() << endl;
     }*/
 
-    for (auto landmark = action_landmarks.begin(); landmark < action_landmarks.end(); ) {
+    for (auto landmark = action_landmarks.begin(); landmark < action_landmarks.end();) {
         bool is_present = action_lm_equal_to_action(*landmark, action, op_id);
-        if(is_present) {
+        if (is_present) {
             landmark = action_landmarks.erase(landmark);
             continue;
         }
@@ -96,10 +90,14 @@ void DBState::set_initial_landmarks(std::vector<FactLm> input_predicate_landmark
 
     for (auto &landmark : input_predicate_landmarks) {
         bool is_present = check_presence_of_fact_lm(landmark);
-        if(!is_present)
+        if (!is_present) {
+            /*cout << landmark.name << " ";
+            for (unsigned int i = 0; i < landmark.arguments.size(); i++)
+                cout << landmark.arguments[i].index << " ";
+            cout << endl;*/
             predicate_landmarks.push_back(landmark);
+        }
     }
-
     /*for (auto &landmark : predicate_landmarks) {
         cout << "Name of Landmark: ";
         cout << landmark.name << endl;
@@ -107,31 +105,28 @@ void DBState::set_initial_landmarks(std::vector<FactLm> input_predicate_landmark
     cout << "Initiale Fact Landmarken gesetzt. Anzahl: " << num_of_predicate_landmarks() << endl;
 
 
-
-
-
 }
 
-bool DBState::check_presence_of_fact_lm(FactLm factlm){
-    if(factlm.arguments.size() == 0){
-        if(!factlm.negated){
+bool DBState::check_presence_of_fact_lm(FactLm factlm) {
+    if (factlm.arguments.size() == 0) {
+        if (!factlm.negated) {
             return nullary_atoms[factlm.index];
         } else {
             return !nullary_atoms[factlm.index];
         }
     } else {
         const auto &tuples = relations[factlm.index].tuples;
-        for( auto &possibleInstant : tuples){
+        for (auto &possibleInstant : tuples) {
             bool match = true;
-            for(unsigned int i = 0; i<= possibleInstant.size(); i++){
-                if(!factlm.arguments[i].constant){
+            for (unsigned int i = 0; i < possibleInstant.size(); i++) {
+                if (!factlm.arguments[i].constant) {
                     continue;
                 }
-                if(factlm.arguments[i].index != possibleInstant[i] ){
+                if (factlm.arguments[i].index != possibleInstant[i]) {
                     match = false;
                 }
             }
-            if(match){
+            if (match) {
                 //cout << factlm.name << endl;
                 return true;
             }
@@ -141,33 +136,33 @@ bool DBState::check_presence_of_fact_lm(FactLm factlm){
 }
 
 
-
 bool DBState::fact_lm_equal_to_ground_effect(FactLm factLm, Atom effect, LiftedOperatorId grounded_action) {
     //cout << "checking fact equal to ground effect" << endl;
     if (effect.name == factLm.name) {
         if (effect.negated == factLm.negated) {
             if (effect.arguments.size() == factLm.arguments.size()) {
-                for (Argument arg : effect.arguments) {
+                bool match = true;
+                for (unsigned int i = 0; i < effect.arguments.size(); i++) {
+                    if (!factLm.arguments[i].constant) {
+                        continue;
+                    }
+                    Argument arg = effect.arguments[i];
                     int objIndex = arg.index;
                     if (!arg.constant) {
                         objIndex = grounded_action.get_instantiation()[arg.index];
                     }
-                    auto it = find_if(factLm.arguments.begin(), factLm.arguments.end(),
-                                      [objIndex](const Argument &fact) {
-                                          return (objIndex == fact.index);
-                                      });
-                    if (it == factLm.arguments.end()) {
-                        return false;
+                    if (objIndex != factLm.arguments[i].index) {
+                        match = false;
                     }
                 }
-                cout << "landmark found equal effect " << effect.name << endl;
-                for(Argument arg : effect.arguments){
+                return match;
+                /*cout << "landmark found equal effect " << effect.name << endl;
+                for (Argument arg : effect.arguments) {
                     std::string text = "Argument is constant: " + std::to_string(arg.constant);
                     text = text + " Index of Argument: ";
                     text = text + std::to_string(arg.index);
                     cout << text << endl;
-                }
-                return true;
+                }*/
             }
         }
     }
