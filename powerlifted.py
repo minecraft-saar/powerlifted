@@ -125,8 +125,8 @@ def main():
     code = subprocess.call(cmd)
 
     # If we found a plan, try to validate it
-    if code == 0:
-        validate(options.domain, options.instance, os.path.join(PROJECT_ROOT, 'sas_plan'))
+    #if code == 0:
+    #    validate(options.domain, options.instance, os.path.join(PROJECT_ROOT, 'sas_plan'))
 
     return code
 
