@@ -351,10 +351,20 @@ void parse_landmarks(std::string input_file, Task &task) {
         bool actionlm, and_con, is_in_Ordering;
         std::string info;
         //parsing bool flags at beginning
-        line_as_stream >> actionlm >> std::ws >> and_con >> std::ws >> num_of_preds >> std::ws >> is_in_Ordering
-                       >> std::ws;
+        line_as_stream >> actionlm >> std::ws >> and_con >> std::ws >> num_of_preds >> std::ws;
         //getting at info about predicate/action in brackets
         info = line_as_stream.str().substr(line_as_stream.tellg());
+        if(info.at(0) == '0') {
+            is_in_Ordering = false;
+            info.erase(0, 1);//remove bit for ordering
+            info.erase(0, 1);//remove whitespace after
+        } else if (info.at(0) == '1') {
+            is_in_Ordering = true;
+            info.erase(0, 1);//remove bit for ordering
+            info.erase(0, 1);//remove whitespace after
+        } else {
+            is_in_Ordering = false;
+        }
 
         std::vector<FactLm> factsInLM;
         //info.erase(0, 1); //remove opening bracket
