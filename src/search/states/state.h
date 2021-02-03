@@ -108,6 +108,7 @@ public:
     }
 
     friend std::size_t hash_value(const DBState &s);
+
 };
 
 /**

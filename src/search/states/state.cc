@@ -108,31 +108,87 @@ void DBState::set_initial_landmarks(std::vector<FactLm> input_predicate_landmark
 }
 
 bool DBState::check_presence_of_fact_lm(FactLm factlm) {
-    if (factlm.arguments.size() == 0) {
-        if (!factlm.negated) {
-            return nullary_atoms[factlm.index];
-        } else {
-            return !nullary_atoms[factlm.index];
+    bool orderedFactLm = factlm.effects.has_value();
+    bool andOrFactLm = factlm.otherPreds.has_value();
+    if (orderedFactLm) {
+        if (factlm.hasUnfullfilledPrecond()) {
+            return false;
         }
-    } else {
-        const auto &tuples = relations[factlm.index].tuples;
-        for (auto &possibleInstant : tuples) {
-            bool match = true;
-            for (unsigned int i = 0; i < possibleInstant.size(); i++) {
-                if (!factlm.arguments[i].constant) {
-                    continue;
-                }
-                if (factlm.arguments[i].index != possibleInstant[i]) {
-                    match = false;
-                }
-            }
-            if (match) {
-                //cout << factlm.name << endl;
-                return true;
-            }
-        }
-        return false;
     }
+    //check for predicate with no arguments
+    if (factlm.arguments.empty()) {
+        bool match;
+        if (factlm.negated) {
+            match = !nullary_atoms[factlm.index];
+        } else {
+            match = nullary_atoms[factlm.index];
+        }
+        if (match) {
+            return true;
+        } else {
+            if (andOrFactLm) {
+                if (!factlm.isAnd()) { //check OR Predicates
+                    std::vector otherPreds = factlm.otherPreds.value();
+                    for (auto &landmark : otherPreds) {
+                        if (check_presence_of_fact_lm(landmark)) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+    }
+
+    //Predicate has arguments
+    const auto &tuples = relations[factlm.index].tuples;
+    for (auto &possibleInstant : tuples) {
+        bool match = true;
+        for (unsigned int i = 0; i < possibleInstant.size(); i++) {
+            if (!factlm.arguments[i].constant) {
+                continue;
+            }
+            if (factlm.arguments[i].index != possibleInstant[i]) {
+                match = false;
+            }
+        }
+        if (match) {
+            if (andOrFactLm) {
+                if (factlm.isAnd()) {
+                    std::vector otherPreds = factlm.otherPreds.value();
+                    for (auto lm : otherPreds) {
+                        //as soon as one is false we break, so no need to && with old value
+                        match = check_presence_of_fact_lm(lm);
+                        if (!match) {
+                            break;
+                        }
+                    }
+                }
+            }
+            if (match && orderedFactLm) {
+                std::vector effects = factlm.effects.value();
+                for (auto *landmark : effects) {
+                    landmark->removePrecon();
+                }
+            }
+            //cout << factlm.name << endl;
+            return match;
+        }
+    }
+
+    //this landmark is not present but check if it is an OR Landmark
+    if (andOrFactLm) {
+        if (!factlm.isAnd()) {
+            std::vector<FactLm> otherPreds = factlm.otherPreds.value();
+            for (auto &landmark : otherPreds) {
+                if (check_presence_of_fact_lm(landmark)) {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+
 }
 
 

@@ -7,6 +7,7 @@
 #include <utility>
 #include <unordered_set>
 #include <vector>
+#include <iostream>
 
 /**
  * @brief GroundAtom is an alias for vector of integers. It is represented
@@ -110,14 +111,77 @@ struct ActionLm {
 
 };
 
-struct FactLm {
-    FactLm(std::string &name, int arity, bool negated, int index, std::vector<Argument> &tuples) : name(std::move(name)), arity(arity), negated(negated), index(index), arguments(std::move(tuples)){}
+class FactLm {
+public:
     std::string name;
     unsigned int arity;
     bool negated;
     int index;
     std::vector<Argument> arguments;
-};
+    // unfullfilledPrecons is only relevant if there are Landmark Orderings
+    int unfullfilledPrecons;
+    bool andLM;
+    std::optional <std::vector<FactLm*>> effects;
+    std::optional <std::vector<FactLm>> otherPreds;
 
+    FactLm(std::string &name, int arity, bool negated, int index, std::vector<Argument> &tuples, bool andlm) :
+    name(std::move(name)), arity(arity), negated(negated), index(index), arguments(std::move(tuples)), unfullfilledPrecons(0), andLM(andlm){}
+
+    void createEffectVec() {
+        if (!effects.has_value()){
+            effects = std::vector<FactLm *>();
+        } else {
+            std::cout << "Effect Vector of Landmark already exists" << std::endl ;
+            exit(1);
+        }
+    }
+
+    void addEffect(FactLm *lm){
+        if (effects.has_value()){
+            std::vector<FactLm*> vec = effects.value();
+            vec.push_back(lm);
+        } else {
+            std::cout << "Effect Vector of Landmark does not exist" << std::endl ;
+            exit(1);
+        }
+    }
+
+    bool hasUnfullfilledPrecond(){
+        return unfullfilledPrecons!=0;
+    }
+
+    void addPrecon(){
+        unfullfilledPrecons = unfullfilledPrecons + 1;
+    }
+
+    void removePrecon(){
+        unfullfilledPrecons = unfullfilledPrecons - 1;
+    }
+
+    void createOtherPreds() {
+        if (!otherPreds.has_value()){
+            otherPreds = std::vector<FactLm>();
+        } else {
+            std::cout << "OtherPreds Vector of Landmark already exists" << std::endl ;
+            exit(1);
+        }
+    }
+
+    bool isAnd(){
+        return andLM;
+    }
+
+    void addOtherPred(FactLm pred){
+        if(otherPreds.has_value()){
+            std::vector<FactLm> preds = otherPreds.value();
+            preds.push_back(pred);
+        } else {
+            std::cout << "OtherPreds Vector of Landmark does not exist" << std::endl ;
+            exit(1);
+        }
+    }
+
+    virtual ~FactLm()=default;
+};
 
 #endif //SEARCH_STRUCTURES_H

@@ -319,15 +319,16 @@ void output_error(string &msg) {
 
 
 void parse_landmarks(std::string input_file, Task &task) {
-    cout << "Start parsing Landmarks" << endl;
     ifstream file(input_file);
     if (!file.is_open()) {
-        cerr << "Lanmarkfile could not be opened" << endl;
+        cerr << "Landmarkfile could not be opened" << endl;
         abort();
     }
+    //cout << "Start parsing Landmarks" << endl;
     std::string line;
     int num_lms = 0;
     int lms_read = 0;
+    //find beginning of Landmark List
     while (std::getline(file, line)) {
         if (line.empty()) {
             continue;
@@ -340,26 +341,40 @@ void parse_landmarks(std::string input_file, Task &task) {
             break;
         }
     }
-    //actual information
+    //Start of Landmark List
     while (std::getline(file, line)) {
-        if(line.at(0) == ';' || line.empty()){
+        if (line.at(0) == ';' || line.empty()) {
             continue; //end of file reached
         }
         stringstream line_as_stream(line);
         int num_of_preds;
-        bool actionlm, and_con;
+        bool actionlm, and_con, is_in_Ordering;
         std::string info;
         //parsing bool flags at beginning
-        line_as_stream >> actionlm >> std::ws >> and_con  >> std::ws >> num_of_preds >> std::ws ;
+        line_as_stream >> actionlm >> std::ws >> and_con >> std::ws >> num_of_preds >> std::ws >> is_in_Ordering
+                       >> std::ws;
         //getting at info about predicate/action in brackets
         info = line_as_stream.str().substr(line_as_stream.tellg());
-        info.erase(0, 1); //remove opening bracket
-        info.erase( info.end()-1); //remove closing bracket
+
+        std::vector<FactLm> factsInLM;
+        //info.erase(0, 1); //remove opening bracket
+        //info.erase( info.end()-1); //remove closing bracket
         std::vector<std::string> arguments;
         string atom = "";
         //cout << "Inhalt einer Klammer " << info << endl;
         for (auto x : info) { //parsing predicate/action into single atom strings
-            if (x == ' ') {
+            if (x == '(') {
+                continue;
+            } else if (x == ')') {
+                arguments.push_back(atom);
+                if (actionlm) {
+                    create_action_lm(arguments, and_con, num_of_preds, task);
+                } else {
+                    FactLm f = create_fact_lm(arguments, and_con, num_of_preds, is_in_Ordering, task);
+                    factsInLM.push_back(f);
+                }
+                arguments.clear();
+            } else if (x == ' ') {
                 arguments.push_back(atom);
                 //cout << "predicate names after parsing " << atom << endl;
                 atom = "";
@@ -367,24 +382,71 @@ void parse_landmarks(std::string input_file, Task &task) {
                 atom = atom + x;
             }
         }
-        arguments.push_back(atom);
+
         if (actionlm) {
             create_action_lm(arguments, and_con, num_of_preds, task);
         } else {
-            create_fact_lm(arguments, and_con, num_of_preds, task);
+            if (num_of_preds > 1) { //means more than one predicate in LM
+                if (factsInLM.at(0).otherPreds.has_value()) {
+                    cout << "adding other Predicates to and landmark" << endl;
+                    for (unsigned int i = 1; i < factsInLM.size(); i++) {
+                        factsInLM.at(0).addOtherPred(factsInLM.at(i));
+                        //factsInLM.at(0).effect = &factsInLM.at(2);
+                    }
+                }
+
+            }
+            task.fact_landmarks.push_back(factsInLM.at(0));
         }
+
         lms_read++;
         if (lms_read >= num_lms) {
             break;
         }
-
+    } //end of Landmark List
+    // Find beginning of Landmark ordering list
+    //cout << "finished parsing Landmarks" << endl;
+    int num_of_orderings = 0;
+    int orderings_read = 0;
+    while (std::getline(file, line)) {
+        if (line.empty()) {
+            continue;
+        } else if (line.at(0) == ';') {
+            continue;
+        } else if (line.at(0) == 'L') {
+            std::getline(file, line);
+            std::string::size_type sz; // alias for size_t so the string conversion works
+            num_of_orderings = std::stoi(line, &sz);
+            break;
+        }
     }
+    // Parsing LM ordering
+    //cout << "Trying to parse Ordering" << endl;
+    while (std::getline(file, line)) {
+        if (line.at(0) == ';' || line.empty()) {
+            continue; //end of file reached
+        }
+        stringstream line_as_stream(line);
+        int indexFirstLm, indexSecondLM;
+        line_as_stream >> indexFirstLm >> std::ws >> indexSecondLM;
+        FactLm firstLMFact = task.fact_landmarks.at(indexFirstLm);
+        FactLm secondLMFact = task.fact_landmarks.at(indexSecondLM);
+
+        firstLMFact.addEffect(&secondLMFact);
+        secondLMFact.addPrecon();
+        orderings_read++;
+        if (num_of_orderings >= orderings_read) {
+            break;
+        }
+    }
+
+
 }
 
-void create_fact_lm(std::vector<std::string> &arguments, bool and_con, int num_of_preds, Task &task) {
-    assert(num_of_preds == 1);
-    bool negated = false;
 
+FactLm
+create_fact_lm(std::vector<std::string> &arguments, bool and_con, int num_of_preds, bool is_in_Ordering, Task &task) {
+    bool negated = false;
     if (arguments[0][0] == '!') {
         negated = true;
         arguments[0].erase(0, 1);
@@ -393,8 +455,8 @@ void create_fact_lm(std::vector<std::string> &arguments, bool and_con, int num_o
     std::vector<Argument> formated_args;
     for (unsigned int i = 1; i < arguments.size(); i++) {
         string name = arguments[i];
-        if(name == "???"){
-            Argument arg(i-1, false);
+        if (name == "???") {
+            Argument arg(i - 1, false);
             formated_args.push_back(arg);
             continue;
         }
@@ -412,9 +474,17 @@ void create_fact_lm(std::vector<std::string> &arguments, bool and_con, int num_o
     });
     int pred_id = it->getIndex();
 
-    FactLm f(pred_name, arity, negated, pred_id, formated_args);
+    FactLm f(pred_name, arity, negated, pred_id, formated_args, and_con);
+    if (num_of_preds > 1) {
+        f.createOtherPreds();
+    }
+    if (is_in_Ordering) {
+        f.createEffectVec();
+    }
+    return f;
+
     //cout << "setting Landmark Name: " << f.name << endl;
-    task.fact_landmarks.push_back(f);
+    //task.fact_landmarks.push_back(f);
     //cout << task.fact_landmarks[task.fact_landmarks.size()-1].name << endl;
 }
 
