@@ -417,6 +417,9 @@ void parse_landmarks(std::string input_file, Task &task) {
             std::getline(file, line);
             std::string::size_type sz; // alias for size_t so the string conversion works
             num_of_orderings = std::stoi(line, &sz);
+            if(num_of_orderings == 0){
+                return;
+            }
             break;
         }
     }
