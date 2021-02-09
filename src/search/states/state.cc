@@ -44,22 +44,29 @@ void DBState::set_landmarks(DBState parent, ActionSchema action, const LiftedOpe
         this->predicate_landmarks.push_back(landmark);
 
     //int previous_landmark_count = predicate_landmarks.size();
-    //for (const Atom &effect : action.get_effects()) {
-
     for (auto landmark = predicate_landmarks.begin(); landmark < predicate_landmarks.end();) {
-        bool is_present = check_presence_of_fact_lm(*landmark);
-        //bool is_present = fact_lm_equal_to_ground_effect(*landmark, effect, op_id);
+        bool is_present = fact_lm_equal_to_ground_effect(*landmark, action, op_id);
         if (is_present) {
             landmark = predicate_landmarks.erase(landmark);
             continue;
         }
         landmark++;
     }
+    /*
+    for (auto landmark = predicate_landmarks.begin(); landmark < predicate_landmarks.end();) {
+        bool is_present = check_presence_of_fact_lm(*landmark);
+        if (is_present) {
+            landmark = predicate_landmarks.erase(landmark);
+            continue;
+        }
+        landmark++;
+    }*/
     //}
     /*if(previous_landmark_count != 0){
         cout << "Parent Landmark count: " << previous_landmark_count << " child landmark count: "<< predicate_landmarks.size() << endl;
     }*/
 
+    /*
     for (auto landmark = action_landmarks.begin(); landmark < action_landmarks.end();) {
         bool is_present = action_lm_equal_to_action(*landmark, action, op_id);
         if (is_present) {
@@ -68,6 +75,9 @@ void DBState::set_landmarks(DBState parent, ActionSchema action, const LiftedOpe
         }
         landmark++;
     }
+    */
+
+
     /*
     for (auto landmark : action_landmarks) {
         //if landmark.name equal action.name check action parameters
@@ -192,33 +202,57 @@ bool DBState::check_presence_of_fact_lm(FactLm factlm) {
 }
 
 
-bool DBState::fact_lm_equal_to_ground_effect(FactLm factLm, Atom effect, LiftedOperatorId grounded_action) {
+bool DBState::fact_lm_equal_to_ground_effect(FactLm factLm, ActionSchema action, const LiftedOperatorId& grounded_action) {
     //cout << "checking fact equal to ground effect" << endl;
-    if (effect.name == factLm.name) {
-        if (effect.negated == factLm.negated) {
-            if (effect.arguments.size() == factLm.arguments.size()) {
-                bool match = true;
-                for (unsigned int i = 0; i < effect.arguments.size(); i++) {
-                    if (!factLm.arguments[i].constant) {
-                        continue;
+    bool orderedFactLm = factLm.effects.has_value();
+    //bool andOrFactLm = factLm.otherPreds.has_value();
+    if (orderedFactLm) {
+        if (factLm.hasUnfullfilledPrecond()) {
+            return false;
+        }
+    }
+
+    if (factLm.arguments.empty()) {
+        if (factLm.negated) {
+            return action.get_negative_nullary_effects().at(factLm.index);
+        } else {
+            return action.get_positive_nullary_effects().at(factLm.index);
+        }
+    }
+
+    for (auto effect : action.get_effects()) {
+        if (effect.name == factLm.name) {
+            if (effect.negated == factLm.negated) {
+                if (effect.arguments.size() == factLm.arguments.size()) {
+                    bool match = true;
+                    for (unsigned int i = 0; i < effect.arguments.size(); i++) {
+                        if (!factLm.arguments[i].constant) {
+                            continue;
+                        }
+                        Argument arg = effect.arguments[i];
+                        int objIndex = arg.index;
+                        if (!arg.constant) {
+                            objIndex = grounded_action.get_instantiation()[arg.index];
+                        }
+                        if (objIndex != factLm.arguments[i].index) {
+                            match = false;
+                        }
                     }
-                    Argument arg = effect.arguments[i];
-                    int objIndex = arg.index;
-                    if (!arg.constant) {
-                        objIndex = grounded_action.get_instantiation()[arg.index];
+                    if (match && orderedFactLm) {
+                        std::vector effects = factLm.effects.value();
+                        for (auto *landmark : effects) {
+                            landmark->removePrecon();
+                        }
                     }
-                    if (objIndex != factLm.arguments[i].index) {
-                        match = false;
-                    }
+                    return match;
+                    /*cout << "landmark found equal effect " << effect.name << endl;
+                    for (Argument arg : effect.arguments) {
+                        std::string text = "Argument is constant: " + std::to_string(arg.constant);
+                        text = text + " Index of Argument: ";
+                        text = text + std::to_string(arg.index);
+                        cout << text << endl;
+                    }*/
                 }
-                return match;
-                /*cout << "landmark found equal effect " << effect.name << endl;
-                for (Argument arg : effect.arguments) {
-                    std::string text = "Argument is constant: " + std::to_string(arg.constant);
-                    text = text + " Index of Argument: ";
-                    text = text + std::to_string(arg.index);
-                    cout << text << endl;
-                }*/
             }
         }
     }

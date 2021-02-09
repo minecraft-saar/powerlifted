@@ -80,7 +80,7 @@ public:
 
     void set_initial_landmarks(std::vector<FactLm> predicate_landmarks, std::vector<ActionLm> action_landmarks);
 
-    bool fact_lm_equal_to_ground_effect(FactLm factLm, Atom effect, LiftedOperatorId grounded_action);
+    bool fact_lm_equal_to_ground_effect(FactLm factLm, ActionSchema action, const LiftedOperatorId& grounded_action);
 
     bool action_lm_equal_to_action(ActionLm actionLm, ActionSchema action, LiftedOperatorId grounded_action);
 
