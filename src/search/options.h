@@ -14,6 +14,7 @@ class Options {
     std::string evaluator;
     std::string state_representation;
     std::string landmark_file;
+    std::string landmark_ordering;
     unsigned seed;
 
 public:
@@ -28,6 +29,7 @@ public:
             ("search,s", po::value<std::string>()->required(), "Search engine.")
             ("state-representation,r", po::value<std::string>()->default_value("sparse"), "State representation.")
             ("landmark,l",po::value<std::string>()->default_value("none"), "Landmark File")
+            ("ordering,o", po::value<std::string>()->default_value("none"), "Landmark Ordering")
             ;
 
         po::variables_map vm;
@@ -52,6 +54,7 @@ public:
         search_engine = vm["search"].as<std::string>();
         state_representation = vm["state-representation"].as<std::string>();
         landmark_file = vm["landmark"].as<std::string>();
+        landmark_ordering = vm["ordering"].as<std::string>();
         seed = vm["seed"].as<unsigned>();
 
     }
@@ -78,6 +81,10 @@ public:
 
     const std::string &get_landmark_file() const {
         return landmark_file;
+    }
+
+    const std::string &get_landmark_ordering() const {
+        return landmark_ordering;
     }
 
     unsigned get_seed() const {

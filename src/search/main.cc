@@ -47,10 +47,11 @@ int main(int argc, char *argv[]) {
 
     //parsing the landmarks if any
     string lm_file = opt.get_landmark_file();
+    string lm_ordering = opt.get_landmark_ordering();
     if(lm_file != "none"){
         task.using_landmarks = true;
         cout << "Trying to parse landmarks" << endl;
-        parse_landmarks(lm_file, task);
+        parse_landmarks(lm_file, task, lm_ordering);
         task.initial_state.set_initial_landmarks(task.fact_landmarks, task.action_landmarks);
     } else {
         task.using_landmarks = false;

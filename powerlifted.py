@@ -37,6 +37,9 @@ def parse_options():
     parser.add_argument('-l', '--landmark', dest='landmark', action='store',
                         default=None, help='Landmark file',
                         required=False)
+    parser.add_argument('-o', '--ordering', dest='ordering', action='store',
+                        default=None, help='Landmark Ordering',
+                        required=False)
     parser.add_argument('--state', action='store', help='Successor generator method',
                         default="sparse", choices=("sparse", "extensional"))
     parser.add_argument('--seed', action='store', help='Random seed.',
@@ -110,8 +113,8 @@ def main():
 
     # Invoke the C++ search component
     cmd = []
-    #if options.debug:
-    #	cmd += ['gdbserver', ':1234']
+    if options.debug:
+    	cmd += ['gdbserver', ':1234']
     cmd += [os.path.join(build_dir, 'search', 'search'),
            '-f', options.translator_file,
            '-s', options.search,
@@ -119,6 +122,7 @@ def main():
            '-g', options.generator,
            '-r', options.state,
            '-l', options.landmark,
+           '-o', options.ordering,
            '--seed', str(options.seed)]
 
     print(f'Executing "{" ".join(cmd)}"')

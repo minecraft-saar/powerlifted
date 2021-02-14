@@ -318,7 +318,7 @@ void output_error(string &msg) {
 }
 
 
-void parse_landmarks(std::string input_file, Task &task) {
+void parse_landmarks(std::string input_file, Task &task, std::string ordering) {
     ifstream file(input_file);
     if (!file.is_open()) {
         cerr << "Landmarkfile could not be opened" << endl;
@@ -380,6 +380,9 @@ void parse_landmarks(std::string input_file, Task &task) {
                 if (actionlm) {
                     create_action_lm(arguments, and_con, num_of_preds, task);
                 } else {
+                    if(ordering == "none"){
+                        is_in_Ordering = false;
+                    }
                     FactLm f = create_fact_lm(arguments, and_con, num_of_preds, is_in_Ordering, task);
                     factsInLM.push_back(f);
                 }
@@ -416,6 +419,9 @@ void parse_landmarks(std::string input_file, Task &task) {
     } //end of Landmark List
     // Find beginning of Landmark ordering list
     //cout << "finished parsing Landmarks" << endl;
+    if(ordering == "none"){
+        return;
+    }
     int num_of_orderings = 0;
     int orderings_read = 0;
     while (std::getline(file, line)) {
