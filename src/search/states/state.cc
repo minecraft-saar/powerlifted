@@ -50,6 +50,20 @@ void DBState::set_landmarks(DBState parent, ActionSchema action, const LiftedOpe
         bool is_present = check_presence_of_fact_lm(*landmark);
         if (is_present) {
             landmark->is_true_now = true;
+
+            // If the landmark has preconditions, we can now remove them from our list
+            // To not break the current for-loop we add them to to_delete vector and delete them after the loop
+            if(landmark->precons.has_value()){
+                std::vector<FactLm*> precons = landmark->precons.value();
+                for(auto precon_landmark : precons){
+                    precon_landmark->num_of_effects--;
+                    //std::vector<FactLm*> effects_of_precon_lm = precon_landmark->effects.value();
+                    //std::remove(effects_of_precon_lm.begin(),effects_of_precon_lm.end(), landmark);
+                    if(precon_landmark->num_of_effects==0){
+                        to_delete.push_back(precon_landmark);
+                    }
+                }
+            }
             //if the landmrk still has effects we need to keep it since effects can only become true if their premise was true in the last step
             if(landmark->num_of_effects!=0){
                     num_of_fullfilled_goal_lms++;
@@ -62,19 +76,6 @@ void DBState::set_landmarks(DBState parent, ActionSchema action, const LiftedOpe
                 } else {
                     //this landmark is neither a goal nor has any effects
                     landmark = predicate_landmarks.erase(landmark);
-                }
-            }
-            // If the landmark has preconditions, we can now remove them from our list
-            // To not break the current for-loop we add them to to_delete vector and delete them after the loop
-            if(landmark->precons.has_value()){
-                std::vector<FactLm*> precons = landmark->precons.value();
-                for(auto precon_landmark : precons){
-                    precon_landmark->num_of_effects--;
-                    //std::vector<FactLm*> effects_of_precon_lm = precon_landmark->effects.value();
-                    //std::remove(effects_of_precon_lm.begin(),effects_of_precon_lm.end(), landmark);
-                    if(precon_landmark->num_of_effects==0){
-                        to_delete.push_back(precon_landmark);
-                    }
                 }
             }
         } else {

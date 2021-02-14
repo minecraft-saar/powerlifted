@@ -42,13 +42,14 @@ public:
                     const SearchNode &node,
                     const SearchSpace<PackedStateT> &space) const {
         if (!task.is_goal(state)) return false;
-        std::cout << "Number of Predicate Landmarks in goal: " << state.num_of_predicate_landmarks()<< std::endl << "Number of fullfilled goal Landmarks: " << state.num_of_fullfilled_goals() << " Number of Action Landmarks in Goal: " << state.num_of_action_landmarks() << std::endl; ;
+        std::cout << "Number of Predicate Landmarks in goal: " << state.num_of_predicate_landmarks() << " Number of fullfilled goal Landmarks: " << state.num_of_fullfilled_goals() << std::endl << "Number of Action Landmarks in Goal: " << state.num_of_action_landmarks() << std::endl; ;
         if(state.num_of_predicate_landmarks()-state.num_of_fullfilled_goals()!=0){
-            for(auto landmark : state.get_predicate_landmarks()){
-                std::cout << landmark.name << " " << landmark.arguments.at(0).index << std::endl;
+            //for(auto landmark : state.get_predicate_landmarks()){
+                //std::cout << landmark.name << " " << landmark.arguments.at(0).index << std::endl;
                // std::cout << " is fullfilled: " << landmark.is_true_now << " is Goal: " << landmark.is_Goal << " has Preconditions: " << landmark.unfullfilledPrecons << std::endl ;
-            }
-            std::cout << "Unfullfilled Landmarks in Goal" << std::endl;
+            //}
+            int unfullfilled = state.num_of_predicate_landmarks()-state.num_of_fullfilled_goals();
+            std::cout << unfullfilled << " Unfullfilled Landmarks in Goal" << std::endl;
             exit(-1);
         }
         print_goal_found(generator, timer_start);
