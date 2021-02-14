@@ -118,15 +118,33 @@ public:
     bool negated;
     int index;
     std::vector<Argument> arguments;
-    // unfullfilledPrecons is only relevant if there are Landmark Orderings
-    int unfullfilledPrecons;
     bool andLM;
-    std::optional <std::vector<FactLm*>> effects;
-    std::optional <std::vector<FactLm>> otherPreds;
+    bool is_Goal;
+    int num_of_effects;
+    bool is_true_now = false;
+    bool was_true_last_step = false;
+    // unfullfilledPrecons is only relevant if there are Landmark Orderings
+    std::optional <std::vector<FactLm*>> precons = std::nullopt;
+    //std::optional <std::vector<FactLm*>> effects;
+    std::optional <std::vector<FactLm>> otherPreds = std::nullopt;
 
-    FactLm(std::string &name, int arity, bool negated, int index, std::vector<Argument> &tuples, bool andlm) :
-    name(std::move(name)), arity(arity), negated(negated), index(index), arguments(std::move(tuples)), unfullfilledPrecons(0), andLM(andlm){}
+    FactLm(std::string &name, int arity, bool negated, int index, std::vector<Argument> &tuples, bool andlm, bool is_goal) :
+    name(std::move(name)), arity(arity), negated(negated), index(index), arguments(std::move(tuples)), andLM(andlm), is_Goal(is_goal), num_of_effects(0){}
 
+    FactLm(const FactLm &to_copy){
+        name = to_copy.name;
+        arity = to_copy.arity;
+        index = to_copy.index;
+        arguments = to_copy.arguments;
+        andLM = to_copy.andLM;
+        is_Goal = to_copy.is_Goal;
+        num_of_effects = to_copy.num_of_effects;
+        is_true_now = to_copy.is_true_now;
+        was_true_last_step = to_copy.was_true_last_step;
+        precons = to_copy.precons;
+        otherPreds = to_copy.otherPreds;
+    }
+/*
     void createEffectVec() {
         if (!effects.has_value()){
             effects = std::vector<FactLm *>();
@@ -144,18 +162,25 @@ public:
             std::cout << "Effect Vector of Landmark does not exist" << std::endl ;
             exit(1);
         }
+    }*/
+
+    void createPreconsVec() {
+        if (!precons.has_value()){
+            precons = std::vector<FactLm *>();
+        } else {
+            std::cout << "Precons Vector of Landmark already exists" << std::endl ;
+            exit(1);
+        }
     }
 
-    bool hasUnfullfilledPrecond(){
-        return unfullfilledPrecons!=0;
-    }
-
-    void addPrecon(){
-        unfullfilledPrecons = unfullfilledPrecons + 1;
-    }
-
-    void removePrecon(){
-        unfullfilledPrecons = unfullfilledPrecons - 1;
+    void addPrecon(FactLm *lm){
+        if (precons.has_value()){
+            std::vector<FactLm*> vec = precons.value();
+            vec.push_back(lm);
+        } else {
+            std::cout << "Effect Vector of Landmark does not exist" << std::endl ;
+            exit(1);
+        }
     }
 
     void createOtherPreds() {
@@ -179,6 +204,28 @@ public:
             std::cout << "OtherPreds Vector of Landmark does not exist" << std::endl ;
             exit(1);
         }
+    }
+
+    bool operator==(const FactLm& rhs){
+        if(this->index == rhs.index){
+            if(this->negated != rhs.negated){
+                return false;
+            }
+            if(this->arity !=rhs.arity){
+                return false;
+            }
+            for (unsigned int i= 0; i< this->arguments.size(); i++){
+                if(this->arguments.at(i).index != rhs.arguments.at(i).index){
+                    return false;
+                } else {
+                    if(this->arguments.at(i).constant != rhs.arguments.at(i).constant){
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+        return false;
     }
 
     virtual ~FactLm()=default;

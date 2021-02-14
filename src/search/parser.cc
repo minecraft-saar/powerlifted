@@ -354,7 +354,7 @@ void parse_landmarks(std::string input_file, Task &task) {
         line_as_stream >> actionlm >> std::ws >> and_con >> std::ws >> num_of_preds >> std::ws;
         //getting at info about predicate/action in brackets
         info = line_as_stream.str().substr(line_as_stream.tellg());
-        if(info.at(0) == '0') {
+        if (info.at(0) == '0') {
             is_in_Ordering = false;
             info.erase(0, 1);//remove bit for ordering
             info.erase(0, 1);//remove whitespace after
@@ -427,7 +427,7 @@ void parse_landmarks(std::string input_file, Task &task) {
             std::getline(file, line);
             std::string::size_type sz; // alias for size_t so the string conversion works
             num_of_orderings = std::stoi(line, &sz);
-            if(num_of_orderings == 0){
+            if (num_of_orderings == 0) {
                 return;
             }
             break;
@@ -445,8 +445,9 @@ void parse_landmarks(std::string input_file, Task &task) {
         FactLm firstLMFact = task.fact_landmarks.at(indexFirstLm);
         FactLm secondLMFact = task.fact_landmarks.at(indexSecondLM);
 
-        firstLMFact.addEffect(&secondLMFact);
-        secondLMFact.addPrecon();
+        //firstLMFact.addEffect(&secondLMFact);
+        firstLMFact.num_of_effects++;
+        secondLMFact.addPrecon(&firstLMFact);
         orderings_read++;
         if (num_of_orderings >= orderings_read) {
             break;
@@ -487,12 +488,53 @@ create_fact_lm(std::vector<std::string> &arguments, bool and_con, int num_of_pre
     });
     int pred_id = it->getIndex();
 
-    FactLm f(pred_name, arity, negated, pred_id, formated_args, and_con);
+    GoalCondition goal = task.goal;
+
+    bool is_goal = false;
+    if (arity == 0) {
+        if (negated) {
+            std::unordered_set<int>::const_iterator got = goal.negative_nullary_goals.find(pred_id);
+            if (got == goal.negative_nullary_goals.end())
+                is_goal = false;
+            else
+                is_goal = true;
+
+        } else {
+            std::unordered_set<int>::const_iterator got = goal.positive_nullary_goals.find(pred_id);
+            if (got == goal.positive_nullary_goals.end())
+                is_goal = false;
+            else
+                is_goal = true;
+        }
+    } else {
+        for (const AtomicGoal &atomicGoal : goal.goal) {
+            if(atomicGoal.predicate == pred_id){
+                bool allmatch = true;
+                for(unsigned int i = 0; i< atomicGoal.args.size(); i++){
+                    if(!formated_args.at(i).constant){
+                        allmatch = false;
+                        break;
+                    }
+                    if(formated_args.at(i).index != atomicGoal.args.at(i)){
+                        allmatch = false;
+                        break;
+                    }
+                }
+                is_goal = allmatch;
+                if(is_goal){
+                    break;
+                }
+            }
+        }
+    }
+
+    FactLm f(pred_name, arity, negated, pred_id, formated_args, and_con, is_goal);
     if (num_of_preds > 1) {
         f.createOtherPreds();
     }
     if (is_in_Ordering) {
-        f.createEffectVec();
+        //f.createEffectVec();
+        f.createPreconsVec();
     }
     return f;
 

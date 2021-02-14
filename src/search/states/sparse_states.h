@@ -42,7 +42,7 @@ public:
     std::vector<bool> nullary_atoms;
     std::vector<FactLm> predicate_landmarks;
     std::vector<ActionLm> action_landmarks;
-
+    int fullfilled_goals;
 
     bool operator==(const SparsePackedState &b) const;
 

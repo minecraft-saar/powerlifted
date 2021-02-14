@@ -33,6 +33,7 @@ class DBState {
     std::vector<bool> nullary_atoms;
     std::vector<FactLm> predicate_landmarks;
     std::vector<ActionLm> action_landmarks;
+    int num_of_fullfilled_goal_lms = 0;
 
 public:
 
@@ -45,8 +46,8 @@ public:
         // Explicit state constructor
     }
 
-    DBState(std::vector<Relation> &&relations, std::vector<bool> &&nullary_atoms, std::vector<FactLm> &&predicate_lms, std::vector<ActionLm> &&action_lms) :
-            relations(std::move(relations)), nullary_atoms(std::move(nullary_atoms)), predicate_landmarks(std::move(predicate_lms)), action_landmarks(std::move(action_lms)) {
+    DBState(std::vector<Relation> &&relations, std::vector<bool> &&nullary_atoms, std::vector<FactLm> &&predicate_lms, std::vector<ActionLm> &&action_lms, int fullfilled_goals) :
+            relations(std::move(relations)), nullary_atoms(std::move(nullary_atoms)), predicate_landmarks(std::move(predicate_lms)), action_landmarks(std::move(action_lms)), num_of_fullfilled_goal_lms(fullfilled_goals) {
         // Explicit state constructor
     }
 
@@ -80,7 +81,7 @@ public:
 
     void set_initial_landmarks(std::vector<FactLm> predicate_landmarks, std::vector<ActionLm> action_landmarks);
 
-    bool fact_lm_equal_to_ground_effect(FactLm factLm, ActionSchema action, const LiftedOperatorId& grounded_action);
+    bool fact_lm_equal_to_ground_effect(FactLm factLM, ActionSchema action, const LiftedOperatorId& grounded_action);
 
     bool action_lm_equal_to_action(ActionLm actionLm, ActionSchema action, LiftedOperatorId grounded_action);
 
@@ -100,7 +101,11 @@ public:
         return action_landmarks.size();
     }
 
-    bool check_presence_of_fact_lm(FactLm factlm);
+    int num_of_fullfilled_goals() const {
+        return num_of_fullfilled_goal_lms;
+    }
+
+    bool check_presence_of_fact_lm(FactLm factLM);
 
 
     bool operator==(const DBState &other) const {
