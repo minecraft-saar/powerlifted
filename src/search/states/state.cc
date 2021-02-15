@@ -40,9 +40,8 @@ void DBState::set_landmarks(DBState parent, ActionSchema action, const LiftedOpe
     for (auto &landmark : parent.predicate_landmarks)
         this->predicate_landmarks.push_back(landmark);
 
-    std::vector<FactLm *> to_delete;
+    std::vector<LandmarkObj *> to_delete;
     for (auto landmark = predicate_landmarks.begin(); landmark < predicate_landmarks.end();) {
-        //bool is_present = fact_lm_equal_to_ground_effect(*landmark, action, op_id);
         bool is_present;
         if (landmark->is_action) {
             is_present = action_lm_equal_to_action(*landmark, action, op_id, type_of_lm_ordering);
@@ -56,11 +55,9 @@ void DBState::set_landmarks(DBState parent, ActionSchema action, const LiftedOpe
                 // If the landmark has preconditions, we can now remove them from our list
                 // To not break the current for-loop we add them to to_delete vector and delete them after the loop
                 if (landmark->precons.has_value()) {
-                    std::vector<FactLm *> precons = landmark->precons.value();
+                    std::vector<LandmarkObj *> precons = landmark->precons.value();
                     for (auto precon_landmark : precons) {
                         precon_landmark->num_of_effects--;
-                        //std::vector<FactLm*> effects_of_precon_lm = precon_landmark->effects.value();
-                        //std::remove(effects_of_precon_lm.begin(),effects_of_precon_lm.end(), landmark);
                         if (precon_landmark->num_of_effects == 0) {
                             to_delete.push_back(precon_landmark);
                         }
@@ -74,7 +71,7 @@ void DBState::set_landmarks(DBState parent, ActionSchema action, const LiftedOpe
                 }
             } else if(type_of_lm_ordering == LMOrdering::Reasonable){
                 if(landmark->effects.has_value()){
-                    std::vector<FactLm *> effects = landmark->effects.value();
+                    std::vector<LandmarkObj *> effects = landmark->effects.value();
                     for(auto lm : effects){
                         lm->num_of_precons--;
                     }
@@ -106,22 +103,10 @@ void DBState::set_landmarks(DBState parent, ActionSchema action, const LiftedOpe
         landmark.was_true_last_step = landmark.is_true_now;
     }
 
-    /*
-    for (auto landmark = action_landmarks.begin(); landmark < action_landmarks.end();) {
-        bool is_present = action_lm_equal_to_action(*landmark, action, op_id);
-        if (is_present) {
-            landmark = action_landmarks.erase(landmark);
-            continue;
-        }
-        landmark++;
-    }
-    */
-
 }
 
-void DBState::set_initial_landmarks(std::vector<FactLm> input_predicate_landmarks,
+void DBState::set_initial_landmarks(std::vector<LandmarkObj> input_predicate_landmarks,
                                     LMOrdering type_of_lm_ordering) {
-    cout << "Initiale Action Landmarken gesetzt. Anzahl: " << num_of_action_landmarks() << endl;
 
     for (auto &landmark : input_predicate_landmarks) {
         bool is_present;
@@ -154,10 +139,6 @@ void DBState::set_initial_landmarks(std::vector<FactLm> input_predicate_landmark
             }
         }
         if (!is_present) {
-            /*cout << landmark.name << " ";
-            for (unsigned int i = 0; i < landmark.arguments.size(); i++)
-                cout << landmark.arguments[i].index << " ";
-            cout << endl;*/
             predicate_landmarks.push_back(landmark);
         }
     }
@@ -165,16 +146,12 @@ void DBState::set_initial_landmarks(std::vector<FactLm> input_predicate_landmark
     for (auto landmark : predicate_landmarks) {
         landmark.was_true_last_step = landmark.is_true_now;
     }
-    /*for (auto &landmark : predicate_landmarks) {
-        cout << "Name of Landmark: ";
-        cout << landmark.name << endl;
-    } */
     cout << "Initiale Fact Landmarken gesetzt. Anzahl: " << num_of_predicate_landmarks() << endl;
 
 
 }
 
-bool DBState::check_presence_of_fact_lm(FactLm factLM, LMOrdering ordering) {
+bool DBState::check_presence_of_fact_lm(LandmarkObj factLM, LMOrdering ordering) {
     bool andOrFactLm = factLM.other_preds.has_value();
     if(ordering == LMOrdering::Greedy){
         if (factLM.precons.has_value()) {
@@ -241,14 +218,6 @@ bool DBState::check_presence_of_fact_lm(FactLm factLM, LMOrdering ordering) {
                     }
                 }
             }
-            /*if (match && orderedFactLm) {
-                std::vector effects = factLM.effects.value();
-                for (auto *landmark : effects) {
-                    landmark->removePrecon();
-                }
-                effects.clear();
-            }*/
-            //cout << factLM.name << endl;
             return match;
         }
     }
@@ -256,7 +225,7 @@ bool DBState::check_presence_of_fact_lm(FactLm factLM, LMOrdering ordering) {
     //this landmark is not present but check if it is an OR Landmark
     if (andOrFactLm) {
         if (!factLM.isAnd()) {
-            std::vector<FactLm> otherPreds = factLM.other_preds.value();
+            std::vector<LandmarkObj> otherPreds = factLM.other_preds.value();
             for (auto &landmark : otherPreds) {
                 if (check_presence_of_fact_lm(landmark, ordering)) {
                     return true;
@@ -268,7 +237,7 @@ bool DBState::check_presence_of_fact_lm(FactLm factLM, LMOrdering ordering) {
 
 }
 
-bool DBState::action_lm_equal_to_action(FactLm actionLm, ActionSchema action, LiftedOperatorId grounded_action, LMOrdering ordering) {
+bool DBState::action_lm_equal_to_action(LandmarkObj actionLm, ActionSchema action, LiftedOperatorId grounded_action, LMOrdering ordering) {
     if(ordering == LMOrdering::Reasonable){
         if(actionLm.num_of_precons != 0){
             return false;
@@ -303,7 +272,7 @@ bool DBState::action_lm_equal_to_action(FactLm actionLm, ActionSchema action, Li
 }
 
 
-bool DBState::fact_lm_equal_to_ground_effect(FactLm factLM, ActionSchema action,
+bool DBState::fact_lm_equal_to_ground_effect(LandmarkObj factLM, ActionSchema action,
                                              const LiftedOperatorId &grounded_action) {
     //cout << "checking fact equal to ground effect" << endl;
     bool orderedFactLm = factLM.precons.has_value();

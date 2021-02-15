@@ -103,17 +103,7 @@ struct Atom {
     bool negated;
 };
 
-struct ActionLm {
-    ActionLm(std::string &name, int arity, std::vector<Argument> &tuples) : name(std::move(name)), arity(arity), arguments(std::move(tuples)){}
-    std::string name;
-    unsigned int arity;
-    std::vector<Argument> arguments;
-    int num_of_effects;
-    std::optional <std::vector<ActionLm*>> precons = std::nullopt;
-
-};
-
-class FactLm {
+class LandmarkObj {
 public:
     std::string name;
     unsigned int arity;
@@ -128,14 +118,14 @@ public:
     bool is_true_now = false;
     bool was_true_last_step = false;
     // unfullfilledPrecons is only relevant if there are Landmark Orderings
-    std::optional <std::vector<FactLm*>> precons = std::nullopt;
-    std::optional <std::vector<FactLm*>> effects;
-    std::optional <std::vector<FactLm>> other_preds = std::nullopt;
+    std::optional <std::vector<LandmarkObj*>> precons = std::nullopt;
+    std::optional <std::vector<LandmarkObj*>> effects;
+    std::optional <std::vector<LandmarkObj>> other_preds = std::nullopt;
 
-    FactLm(std::string &name, int arity, bool negated, int index, std::vector<Argument> &tuples, bool andlm, bool isGoal, bool isAction) :
+    LandmarkObj(std::string &name, int arity, bool negated, int index, std::vector<Argument> &tuples, bool andlm, bool isGoal, bool isAction) :
             name(std::move(name)), arity(arity), negated(negated), index(index), arguments(std::move(tuples)), and_lm(andlm), is_goal(isGoal), is_action(isAction) , num_of_effects(0){}
 
-    FactLm(const FactLm &to_copy){
+    LandmarkObj(const LandmarkObj &to_copy){
         name = to_copy.name;
         arity = to_copy.arity;
         index = to_copy.index;
@@ -154,16 +144,16 @@ public:
 
     void createEffectVec() {
         if (!effects.has_value()){
-            effects = std::vector<FactLm *>();
+            effects = std::vector<LandmarkObj *>();
         } else {
             std::cout << "Effect Vector of Landmark already exists" << std::endl ;
             exit(1);
         }
     }
 
-    void addEffect(FactLm *lm){
+    void addEffect(LandmarkObj *lm){
         if (effects.has_value()){
-            std::vector<FactLm*> vec = effects.value();
+            std::vector<LandmarkObj*> vec = effects.value();
             vec.push_back(lm);
         } else {
             std::cout << "Effect Vector of Landmark does not exist" << std::endl ;
@@ -173,16 +163,16 @@ public:
 
     void createPreconsVec() {
         if (!precons.has_value()){
-            precons = std::vector<FactLm *>();
+            precons = std::vector<LandmarkObj *>();
         } else {
             std::cout << "Precons Vector of Landmark already exists" << std::endl ;
             exit(1);
         }
     }
 
-    void addPrecon(FactLm *lm){
+    void addPrecon(LandmarkObj *lm){
         if (precons.has_value()){
-            std::vector<FactLm*> vec = precons.value();
+            std::vector<LandmarkObj*> vec = precons.value();
             vec.push_back(lm);
         } else {
             std::cout << "Effect Vector of Landmark does not exist" << std::endl ;
@@ -192,7 +182,7 @@ public:
 
     void createOtherPreds() {
         if (!other_preds.has_value()){
-            other_preds = std::vector<FactLm>();
+            other_preds = std::vector<LandmarkObj>();
         } else {
             std::cout << "OtherPreds Vector of Landmark already exists" << std::endl ;
             exit(1);
@@ -203,9 +193,9 @@ public:
         return and_lm;
     }
 
-    void addOtherPred(FactLm pred){
+    void addOtherPred(LandmarkObj pred){
         if(other_preds.has_value()){
-            std::vector<FactLm> preds = other_preds.value();
+            std::vector<LandmarkObj> preds = other_preds.value();
             preds.push_back(pred);
         } else {
             std::cout << "OtherPreds Vector of Landmark does not exist" << std::endl ;
@@ -213,7 +203,7 @@ public:
         }
     }
 
-    bool operator==(const FactLm& rhs){
+    bool operator==(const LandmarkObj& rhs){
         if(this->index == rhs.index){
             if(this->negated != rhs.negated){
                 return false;
@@ -235,7 +225,7 @@ public:
         return false;
     }
 
-    virtual ~FactLm()=default;
+    virtual ~LandmarkObj()=default;
 };
 
 enum class LMOrdering{Reasonable, Greedy, None};

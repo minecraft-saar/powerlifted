@@ -42,7 +42,7 @@ public:
                     const SearchNode &node,
                     const SearchSpace<PackedStateT> &space) const {
         if (!task.is_goal(state)) return false;
-        std::cout << "Number of Predicate Landmarks in goal: " << state.num_of_predicate_landmarks() << " Number of fullfilled goal Landmarks: " << state.num_of_fullfilled_goals() << std::endl << "Number of Action Landmarks in Goal: " << state.num_of_action_landmarks() << std::endl; ;
+        std::cout << "Number of Predicate Landmarks in goal: " << state.num_of_predicate_landmarks() << " Number of fullfilled goal Landmarks: " << state.num_of_fullfilled_goals() << std::endl;
         if(state.num_of_predicate_landmarks()-state.num_of_fullfilled_goals()!=0){
             for(auto landmark : state.get_predicate_landmarks()){
                 std::cout << landmark.name << " " ;

@@ -31,8 +31,7 @@ class DBState {
 
     std::vector<Relation> relations;
     std::vector<bool> nullary_atoms;
-    std::vector<FactLm> predicate_landmarks;
-    std::vector<ActionLm> action_landmarks;
+    std::vector<LandmarkObj> predicate_landmarks;
     int num_of_fullfilled_goal_lms = 0;
 
 public:
@@ -46,8 +45,8 @@ public:
         // Explicit state constructor
     }
 
-    DBState(std::vector<Relation> &&relations, std::vector<bool> &&nullary_atoms, std::vector<FactLm> &&predicate_lms, std::vector<ActionLm> &&action_lms, int fullfilled_goals) :
-            relations(std::move(relations)), nullary_atoms(std::move(nullary_atoms)), predicate_landmarks(std::move(predicate_lms)), action_landmarks(std::move(action_lms)), num_of_fullfilled_goal_lms(fullfilled_goals) {
+    DBState(std::vector<Relation> &&relations, std::vector<bool> &&nullary_atoms, std::vector<LandmarkObj> &&predicate_lms, int fullfilled_goals) :
+            relations(std::move(relations)), nullary_atoms(std::move(nullary_atoms)), predicate_landmarks(std::move(predicate_lms)), num_of_fullfilled_goal_lms(fullfilled_goals) {
         // Explicit state constructor
     }
 
@@ -79,28 +78,20 @@ public:
 
     void set_landmarks(DBState parent, ActionSchema action, const LiftedOperatorId& op_id, LMOrdering type_of_lm_ordering);
 
-    void set_initial_landmarks(std::vector<FactLm> predicate_landmarks, LMOrdering type_of_lm_ordering);
+    void set_initial_landmarks(std::vector<LandmarkObj> predicate_landmarks, LMOrdering type_of_lm_ordering);
 
-    bool fact_lm_equal_to_ground_effect(FactLm factLM, ActionSchema action, const LiftedOperatorId& grounded_action);
+    bool fact_lm_equal_to_ground_effect(LandmarkObj factLM, ActionSchema action, const LiftedOperatorId& grounded_action);
 
-    bool action_lm_equal_to_action(FactLm actionLm, ActionSchema action, LiftedOperatorId grounded_action, LMOrdering ordering);
+    bool action_lm_equal_to_action(LandmarkObj actionLm, ActionSchema action, LiftedOperatorId grounded_action, LMOrdering ordering);
 
-    bool check_presence_of_fact_lm(FactLm factLM, LMOrdering ordering);
+    bool check_presence_of_fact_lm(LandmarkObj factLM, LMOrdering ordering);
 
-     const std::vector<ActionLm>& get_action_landmarks() const {
-        return action_landmarks;
-    }
-
-     const std::vector<FactLm>& get_predicate_landmarks() const{
+     const std::vector<LandmarkObj>& get_predicate_landmarks() const{
         return predicate_landmarks;
     }
 
      int num_of_predicate_landmarks() const {
         return predicate_landmarks.size();
-    }
-
-    int num_of_action_landmarks() const {
-        return action_landmarks.size();
     }
 
     int num_of_fullfilled_goals() const {
