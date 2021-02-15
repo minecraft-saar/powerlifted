@@ -318,7 +318,7 @@ void output_error(string &msg) {
 }
 
 
-void parse_landmarks(std::string input_file, Task &task, std::string ordering) {
+void parse_landmarks(std::string input_file, Task &task, LMOrdering type_of_ordering) {
     ifstream file(input_file);
     if (!file.is_open()) {
         cerr << "Landmarkfile could not be opened" << endl;
@@ -356,13 +356,16 @@ void parse_landmarks(std::string input_file, Task &task, std::string ordering) {
         info = line_as_stream.str().substr(line_as_stream.tellg());
         if (info.at(0) == '0') {
             is_in_Ordering = false;
-            info.erase(0, 1);//remove bit for ordering
+            info.erase(0, 1);//remove bit for type_of_ordering
             info.erase(0, 1);//remove whitespace after
         } else if (info.at(0) == '1') {
             is_in_Ordering = true;
-            info.erase(0, 1);//remove bit for ordering
+            info.erase(0, 1);//remove bit for type_of_ordering
             info.erase(0, 1);//remove whitespace after
         } else {
+            is_in_Ordering = false;
+        }
+        if (type_of_ordering == LMOrdering::None) {
             is_in_Ordering = false;
         }
 
@@ -378,12 +381,10 @@ void parse_landmarks(std::string input_file, Task &task, std::string ordering) {
             } else if (x == ')') {
                 arguments.push_back(atom);
                 if (actionlm) {
-                    create_action_lm(arguments, and_con, num_of_preds, task);
+                    FactLm f = create_action_lm(arguments, and_con, num_of_preds, is_in_Ordering, task, type_of_ordering);
+                    factsInLM.push_back(f);
                 } else {
-                    if(ordering == "none"){
-                        is_in_Ordering = false;
-                    }
-                    FactLm f = create_fact_lm(arguments, and_con, num_of_preds, is_in_Ordering, task);
+                    FactLm f = create_fact_lm(arguments, and_con, num_of_preds, is_in_Ordering, task, type_of_ordering);
                     factsInLM.push_back(f);
                 }
                 arguments.clear();
@@ -396,30 +397,24 @@ void parse_landmarks(std::string input_file, Task &task, std::string ordering) {
             }
         }
 
-        if (actionlm) {
-            create_action_lm(arguments, and_con, num_of_preds, task);
-        } else {
-            if (num_of_preds > 1) { //means more than one predicate in LM
-                if (factsInLM.at(0).otherPreds.has_value()) {
-                    cout << "adding other Predicates to and landmark" << endl;
-                    for (unsigned int i = 1; i < factsInLM.size(); i++) {
-                        factsInLM.at(0).addOtherPred(factsInLM.at(i));
-                        //factsInLM.at(0).effect = &factsInLM.at(2);
-                    }
+        if (num_of_preds > 1) { //means more than one predicate in LM
+            if (factsInLM.at(0).other_preds.has_value()) {
+                cout << "adding other Predicates to and landmark" << endl;
+                for (unsigned int i = 1; i < factsInLM.size(); i++) {
+                    factsInLM.at(0).addOtherPred(factsInLM.at(i));
+                    //factsInLM.at(0).effect = &factsInLM.at(2);
                 }
-
             }
-            task.fact_landmarks.push_back(factsInLM.at(0));
         }
-
+        task.fact_landmarks.push_back(factsInLM.at(0));
         lms_read++;
         if (lms_read >= num_lms) {
             break;
         }
     } //end of Landmark List
-    // Find beginning of Landmark ordering list
+    // Find beginning of Landmark type_of_ordering list
     //cout << "finished parsing Landmarks" << endl;
-    if(ordering == "none"){
+    if (type_of_ordering == LMOrdering::None) {
         return;
     }
     int num_of_orderings = 0;
@@ -439,7 +434,7 @@ void parse_landmarks(std::string input_file, Task &task, std::string ordering) {
             break;
         }
     }
-    // Parsing LM ordering
+    // Parsing LM type_of_ordering
     //cout << "Trying to parse Ordering" << endl;
     while (std::getline(file, line)) {
         if (line.at(0) == ';' || line.empty()) {
@@ -448,12 +443,19 @@ void parse_landmarks(std::string input_file, Task &task, std::string ordering) {
         stringstream line_as_stream(line);
         int indexFirstLm, indexSecondLM;
         line_as_stream >> indexFirstLm >> std::ws >> indexSecondLM;
+
         FactLm firstLMFact = task.fact_landmarks.at(indexFirstLm);
         FactLm secondLMFact = task.fact_landmarks.at(indexSecondLM);
+        if(type_of_ordering == LMOrdering::Greedy){
 
-        //firstLMFact.addEffect(&secondLMFact);
-        firstLMFact.num_of_effects++;
-        secondLMFact.addPrecon(&firstLMFact);
+            //firstLMFact.addEffect(&secondLMFact);
+            firstLMFact.num_of_effects++;
+            secondLMFact.addPrecon(&firstLMFact);
+        } else if(type_of_ordering == LMOrdering::Reasonable){
+            firstLMFact.addEffect(&secondLMFact);
+            secondLMFact.num_of_precons++;
+        }
+
         orderings_read++;
         if (num_of_orderings >= orderings_read) {
             break;
@@ -465,7 +467,7 @@ void parse_landmarks(std::string input_file, Task &task, std::string ordering) {
 
 
 FactLm
-create_fact_lm(std::vector<std::string> &arguments, bool and_con, int num_of_preds, bool is_in_Ordering, Task &task) {
+create_fact_lm(std::vector<std::string> &arguments, bool and_con, int num_of_preds, bool is_in_ordering, Task &task, LMOrdering type_of_ordering) {
     bool negated = false;
     if (arguments[0][0] == '!') {
         negated = true;
@@ -514,33 +516,36 @@ create_fact_lm(std::vector<std::string> &arguments, bool and_con, int num_of_pre
         }
     } else {
         for (const AtomicGoal &atomicGoal : goal.goal) {
-            if(atomicGoal.predicate == pred_id){
+            if (atomicGoal.predicate == pred_id) {
                 bool allmatch = true;
-                for(unsigned int i = 0; i< atomicGoal.args.size(); i++){
-                    if(!formated_args.at(i).constant){
+                for (unsigned int i = 0; i < atomicGoal.args.size(); i++) {
+                    if (!formated_args.at(i).constant) {
                         allmatch = false;
                         break;
                     }
-                    if(formated_args.at(i).index != atomicGoal.args.at(i)){
+                    if (formated_args.at(i).index != atomicGoal.args.at(i)) {
                         allmatch = false;
                         break;
                     }
                 }
                 is_goal = allmatch;
-                if(is_goal){
+                if (is_goal) {
                     break;
                 }
             }
         }
     }
 
-    FactLm f(pred_name, arity, negated, pred_id, formated_args, and_con, is_goal);
+    FactLm f(pred_name, arity, negated, pred_id, formated_args, and_con, is_goal, false);
     if (num_of_preds > 1) {
         f.createOtherPreds();
     }
-    if (is_in_Ordering) {
-        //f.createEffectVec();
-        f.createPreconsVec();
+    if (is_in_ordering) {
+        if(type_of_ordering == LMOrdering::Greedy){
+            f.createPreconsVec();
+        } else if(type_of_ordering == LMOrdering::Reasonable){
+            f.createEffectVec();
+        }
     }
     return f;
 
@@ -549,12 +554,18 @@ create_fact_lm(std::vector<std::string> &arguments, bool and_con, int num_of_pre
     //cout << task.fact_landmarks[task.fact_landmarks.size()-1].name << endl;
 }
 
-void create_action_lm(std::vector<string> &arguments, bool and_con, int num_of_preds, Task &task) {
-    assert(num_of_preds == 1);
+FactLm
+create_action_lm(std::vector<string> &arguments, bool and_con, int num_of_preds, bool is_in_ordering, Task &task, LMOrdering type_of_ordering) {
+    bool negated = false;
     int arity = arguments.size() - 1;
     std::vector<Argument> formated_args;
     for (unsigned int i = 1; i < arguments.size(); i++) {
         string name = arguments[i];
+        if (name == "???") {
+            Argument arg(i - 1, false);
+            formated_args.push_back(arg);
+            continue;
+        }
         auto it = find_if(task.objects.begin(), task.objects.end(), [&name](const Object &obj) {
             return name == obj.getName();
         });
@@ -563,6 +574,22 @@ void create_action_lm(std::vector<string> &arguments, bool and_con, int num_of_p
         Argument arg(index, true);
         formated_args.push_back(arg);
     }
-    ActionLm actionlm(arguments[0], arity, formated_args);
-    task.action_landmarks.push_back(actionlm);
+    string action_name = arguments[0];
+    auto it = find_if(task.actions.begin(), task.actions.end(), [&action_name](const ActionSchema &action) {
+        return action_name == action.get_name();
+    });
+    int action_id = it->get_index();
+
+    FactLm f(action_name, arity, negated, action_id, formated_args, and_con, false, true);
+    if (num_of_preds > 1) {
+        f.createOtherPreds();
+    }
+    if (is_in_ordering) {
+        if(type_of_ordering == LMOrdering::Greedy){
+            f.createPreconsVec();
+        } else if(type_of_ordering == LMOrdering::Reasonable){
+            f.createEffectVec();
+        }
+    }
+    return f;
 }

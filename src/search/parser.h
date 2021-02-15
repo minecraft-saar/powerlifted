@@ -25,8 +25,8 @@ void parse_initial_state(Task &task, int initial_state_size);
 void parse_goal(Task &task, int goal_size);
 void parse_action_schemas(Task &task, int number_action_schemas);
 
-void parse_landmarks(std::string file, Task &task, std::string ordering);
-FactLm create_fact_lm(std::vector<std::string> &arguments, bool and_con, int num_of_preds, bool is_in_Ordering, Task &task);
-void create_action_lm(std::vector<std::string> &arguments, bool and_con, int num_of_preds, Task &task);
+void parse_landmarks(std::string file, Task &task, LMOrdering type_of_ordering);
+FactLm create_fact_lm(std::vector<std::string> &arguments, bool and_con, int num_of_preds, bool is_in_ordering, Task &task, LMOrdering type_of_ordering);
+FactLm create_action_lm(std::vector<std::string> &arguments, bool and_con, int num_of_preds, bool is_in_ordering, Task &task, LMOrdering type_of_ordering);
 
 #endif  // SEARCH_PARSER_H

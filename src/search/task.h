@@ -35,8 +35,8 @@ public:
   std::vector<std::string> type_names;
   std::unordered_set<int> nullary_predicates;
   std::vector<FactLm> fact_landmarks;
-  std::vector<ActionLm> action_landmarks;
   bool using_landmarks;
+  LMOrdering type_of_lm_ordering;
 
   Task(const std::string &domain_name, const std::string &task_name)
       : domain_name(domain_name), task_name(task_name) {

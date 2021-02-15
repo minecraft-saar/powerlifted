@@ -4,6 +4,7 @@
 #include <iostream>
 
 #include <boost/program_options.hpp>
+#include "structures.h"
 
 namespace po = boost::program_options;
 
@@ -83,8 +84,15 @@ public:
         return landmark_file;
     }
 
-    const std::string &get_landmark_ordering() const {
-        return landmark_ordering;
+    const LMOrdering get_landmark_ordering() const {
+        if(landmark_ordering == "ro"){
+            return LMOrdering::Reasonable;
+        } else if(landmark_ordering == "gno"){
+            return LMOrdering::Greedy;
+        } else {
+            return LMOrdering::None;
+        }
+        //return landmark_ordering;
     }
 
     unsigned get_seed() const {

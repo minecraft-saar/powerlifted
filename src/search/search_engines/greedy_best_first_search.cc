@@ -74,7 +74,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
                 //handeling landmark tracking
                 if(task.using_landmarks) {
                     s.set_landmarks(state, action,
-                                    op_id); // op_id beinhaltet die IDs für die Action und die gegründeten Parameter
+                                    op_id, task.type_of_lm_ordering); // op_id beinhaltet die IDs für die Action und die gegründeten Parameter
                 }
                 int dist = g + action.get_cost();
                 int new_h = heuristic.compute_heuristic(s, task);

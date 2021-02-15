@@ -108,6 +108,8 @@ struct ActionLm {
     std::string name;
     unsigned int arity;
     std::vector<Argument> arguments;
+    int num_of_effects;
+    std::optional <std::vector<ActionLm*>> precons = std::nullopt;
 
 };
 
@@ -118,33 +120,38 @@ public:
     bool negated;
     int index;
     std::vector<Argument> arguments;
-    bool andLM;
-    bool is_Goal;
+    bool and_lm;
+    bool is_goal;
+    bool is_action;
     int num_of_effects;
+    int num_of_precons;
     bool is_true_now = false;
     bool was_true_last_step = false;
     // unfullfilledPrecons is only relevant if there are Landmark Orderings
     std::optional <std::vector<FactLm*>> precons = std::nullopt;
-    //std::optional <std::vector<FactLm*>> effects;
-    std::optional <std::vector<FactLm>> otherPreds = std::nullopt;
+    std::optional <std::vector<FactLm*>> effects;
+    std::optional <std::vector<FactLm>> other_preds = std::nullopt;
 
-    FactLm(std::string &name, int arity, bool negated, int index, std::vector<Argument> &tuples, bool andlm, bool is_goal) :
-    name(std::move(name)), arity(arity), negated(negated), index(index), arguments(std::move(tuples)), andLM(andlm), is_Goal(is_goal), num_of_effects(0){}
+    FactLm(std::string &name, int arity, bool negated, int index, std::vector<Argument> &tuples, bool andlm, bool isGoal, bool isAction) :
+            name(std::move(name)), arity(arity), negated(negated), index(index), arguments(std::move(tuples)), and_lm(andlm), is_goal(isGoal), is_action(isAction) , num_of_effects(0){}
 
     FactLm(const FactLm &to_copy){
         name = to_copy.name;
         arity = to_copy.arity;
         index = to_copy.index;
         arguments = to_copy.arguments;
-        andLM = to_copy.andLM;
-        is_Goal = to_copy.is_Goal;
+        and_lm = to_copy.and_lm;
+        is_goal = to_copy.is_goal;
+        is_action = to_copy.is_action;
         num_of_effects = to_copy.num_of_effects;
+        num_of_precons = to_copy.num_of_precons;
         is_true_now = to_copy.is_true_now;
         was_true_last_step = to_copy.was_true_last_step;
         precons = to_copy.precons;
-        otherPreds = to_copy.otherPreds;
+        effects = to_copy.effects;
+        other_preds = to_copy.other_preds;
     }
-/*
+
     void createEffectVec() {
         if (!effects.has_value()){
             effects = std::vector<FactLm *>();
@@ -162,7 +169,7 @@ public:
             std::cout << "Effect Vector of Landmark does not exist" << std::endl ;
             exit(1);
         }
-    }*/
+    }
 
     void createPreconsVec() {
         if (!precons.has_value()){
@@ -184,8 +191,8 @@ public:
     }
 
     void createOtherPreds() {
-        if (!otherPreds.has_value()){
-            otherPreds = std::vector<FactLm>();
+        if (!other_preds.has_value()){
+            other_preds = std::vector<FactLm>();
         } else {
             std::cout << "OtherPreds Vector of Landmark already exists" << std::endl ;
             exit(1);
@@ -193,12 +200,12 @@ public:
     }
 
     bool isAnd(){
-        return andLM;
+        return and_lm;
     }
 
     void addOtherPred(FactLm pred){
-        if(otherPreds.has_value()){
-            std::vector<FactLm> preds = otherPreds.value();
+        if(other_preds.has_value()){
+            std::vector<FactLm> preds = other_preds.value();
             preds.push_back(pred);
         } else {
             std::cout << "OtherPreds Vector of Landmark does not exist" << std::endl ;
@@ -230,5 +237,7 @@ public:
 
     virtual ~FactLm()=default;
 };
+
+enum class LMOrdering{Reasonable, Greedy, None};
 
 #endif //SEARCH_STRUCTURES_H

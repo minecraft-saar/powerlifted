@@ -77,13 +77,15 @@ public:
 
     void add_tuple(int relation, const GroundAtom &args);
 
-    void set_landmarks(DBState parent, ActionSchema action, const LiftedOperatorId& op_id);
+    void set_landmarks(DBState parent, ActionSchema action, const LiftedOperatorId& op_id, LMOrdering type_of_lm_ordering);
 
-    void set_initial_landmarks(std::vector<FactLm> predicate_landmarks, std::vector<ActionLm> action_landmarks);
+    void set_initial_landmarks(std::vector<FactLm> predicate_landmarks, LMOrdering type_of_lm_ordering);
 
     bool fact_lm_equal_to_ground_effect(FactLm factLM, ActionSchema action, const LiftedOperatorId& grounded_action);
 
-    bool action_lm_equal_to_action(ActionLm actionLm, ActionSchema action, LiftedOperatorId grounded_action);
+    bool action_lm_equal_to_action(FactLm actionLm, ActionSchema action, LiftedOperatorId grounded_action, LMOrdering ordering);
+
+    bool check_presence_of_fact_lm(FactLm factLM, LMOrdering ordering);
 
      const std::vector<ActionLm>& get_action_landmarks() const {
         return action_landmarks;
@@ -104,8 +106,6 @@ public:
     int num_of_fullfilled_goals() const {
         return num_of_fullfilled_goal_lms;
     }
-
-    bool check_presence_of_fact_lm(FactLm factLM);
 
 
     bool operator==(const DBState &other) const {
