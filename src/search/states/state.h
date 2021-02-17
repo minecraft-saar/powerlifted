@@ -76,15 +76,17 @@ public:
 
     void add_tuple(int relation, const GroundAtom &args);
 
-    void set_landmarks(DBState parent, ActionSchema action, const LiftedOperatorId& op_id, LMOrdering type_of_lm_ordering);
+    void set_landmarks(DBState parent, ActionSchema action, const LiftedOperatorId& op_id);
 
-    void set_initial_landmarks(std::vector<LandmarkObj> predicate_landmarks, LMOrdering type_of_lm_ordering);
+    void set_initial_landmarks(std::vector<LandmarkObj> predicate_landmarks);
 
     bool fact_lm_equal_to_ground_effect(LandmarkObj factLM, ActionSchema action, const LiftedOperatorId& grounded_action);
 
-    bool action_lm_equal_to_action(LandmarkObj actionLm, ActionSchema action, LiftedOperatorId grounded_action, LMOrdering ordering);
+    bool action_lm_equal_to_action(LandmarkObj actionLm, ActionSchema action, LiftedOperatorId grounded_action);
 
-    bool check_presence_of_fact_lm(LandmarkObj factLM, LMOrdering ordering);
+    bool check_presence_of_fact_lm(LandmarkObj factLM);
+
+    std::vector<LandmarkObj> check_precons_for_reinsertion(LandmarkObj lm, std::vector<LandmarkObj> to_add);
 
      const std::vector<LandmarkObj>& get_predicate_landmarks() const{
         return predicate_landmarks;

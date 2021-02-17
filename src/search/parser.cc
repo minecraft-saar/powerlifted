@@ -318,7 +318,7 @@ void output_error(string &msg) {
 }
 
 
-void parse_landmarks(std::string input_file, Task &task, LMOrdering type_of_ordering) {
+void parse_landmarks(std::string input_file, Task &task, LMOrdering parse_ordering) {
     ifstream file(input_file);
     if (!file.is_open()) {
         cerr << "Landmarkfile could not be opened" << endl;
@@ -356,16 +356,16 @@ void parse_landmarks(std::string input_file, Task &task, LMOrdering type_of_orde
         info = line_as_stream.str().substr(line_as_stream.tellg());
         if (info.at(0) == '0') {
             is_in_Ordering = false;
-            info.erase(0, 1);//remove bit for type_of_ordering
+            info.erase(0, 1);//remove bit for parse_ordering
             info.erase(0, 1);//remove whitespace after
         } else if (info.at(0) == '1') {
             is_in_Ordering = true;
-            info.erase(0, 1);//remove bit for type_of_ordering
+            info.erase(0, 1);//remove bit for parse_ordering
             info.erase(0, 1);//remove whitespace after
         } else {
             is_in_Ordering = false;
         }
-        if (type_of_ordering == LMOrdering::None) {
+        if (parse_ordering == LMOrdering::None) {
             is_in_Ordering = false;
         }
 
@@ -381,10 +381,10 @@ void parse_landmarks(std::string input_file, Task &task, LMOrdering type_of_orde
             } else if (x == ')') {
                 arguments.push_back(atom);
                 if (actionlm) {
-                    LandmarkObj f = create_action_lm(arguments, and_con, num_of_preds, is_in_Ordering, task, type_of_ordering);
+                    LandmarkObj f = create_action_lm(arguments, and_con, num_of_preds, is_in_Ordering, task, parse_ordering);
                     factsInLM.push_back(f);
                 } else {
-                    LandmarkObj f = create_fact_lm(arguments, and_con, num_of_preds, is_in_Ordering, task, type_of_ordering);
+                    LandmarkObj f = create_fact_lm(arguments, and_con, num_of_preds, is_in_Ordering, task, parse_ordering);
                     factsInLM.push_back(f);
                 }
                 arguments.clear();
@@ -412,9 +412,9 @@ void parse_landmarks(std::string input_file, Task &task, LMOrdering type_of_orde
             break;
         }
     } //end of Landmark List
-    // Find beginning of Landmark type_of_ordering list
+    // Find beginning of Landmark parse_ordering list
     //cout << "finished parsing Landmarks" << endl;
-    if (type_of_ordering == LMOrdering::None) {
+    if (parse_ordering == LMOrdering::None) {
         return;
     }
     int num_of_orderings = 0;
@@ -434,26 +434,42 @@ void parse_landmarks(std::string input_file, Task &task, LMOrdering type_of_orde
             break;
         }
     }
-    // Parsing LM type_of_ordering
+    // Parsing LM parse_ordering
     //cout << "Trying to parse Ordering" << endl;
     while (std::getline(file, line)) {
         if (line.at(0) == ';' || line.empty()) {
             continue; //end of file reached
         }
         stringstream line_as_stream(line);
-        int indexFirstLm, indexSecondLM;
-        line_as_stream >> indexFirstLm >> std::ws >> indexSecondLM;
+        int indexFirstLm, indexSecondLM, ordering_type;
+        line_as_stream >> indexFirstLm >> std::ws >> indexSecondLM >> std::ws >> ordering_type;
+        LMOrdering type_of_ordering;
+        if(ordering_type == 0){
+            type_of_ordering = LMOrdering::Greedy;
+        } else if(ordering_type == 1){
+            type_of_ordering = LMOrdering::Reasonable;
+        } else if(ordering_type == 2){
+            type_of_ordering = LMOrdering::Natural;
+        } else {
+            std::cout << "Unkown type of ordering " << line << std::endl;
+            exit(-1);
+        }
 
         LandmarkObj firstLMFact = task.fact_landmarks.at(indexFirstLm);
         LandmarkObj secondLMFact = task.fact_landmarks.at(indexSecondLM);
-        if(type_of_ordering == LMOrdering::Greedy){
 
+        if(type_of_ordering == LMOrdering::Greedy){
             //firstLMFact.addEffect(&secondLMFact);
-            firstLMFact.num_of_effects++;
-            secondLMFact.addPrecon(&firstLMFact);
-        } else if(type_of_ordering == LMOrdering::Reasonable){
+            firstLMFact.num_of_greedy_effects++;
+            secondLMFact.addGreedyPrecon(&firstLMFact);
+        } else if(type_of_ordering == LMOrdering::Natural){
             firstLMFact.addEffect(&secondLMFact);
-            secondLMFact.num_of_precons++;
+            secondLMFact.num_of_natural_precons++;
+        } else if(type_of_ordering == LMOrdering::Reasonable){
+            secondLMFact.addReasonablePrecon(&firstLMFact);
+        } else {
+            std::cout << "Unkown type of ordering entered " << line << std::endl;
+            exit(-1);
         }
 
         orderings_read++;
@@ -541,11 +557,12 @@ create_fact_lm(std::vector<std::string> &arguments, bool and_con, int num_of_pre
         f.createOtherPreds();
     }
     if (is_in_ordering) {
-        if(type_of_ordering == LMOrdering::Greedy){
-            f.createPreconsVec();
-        } else if(type_of_ordering == LMOrdering::Reasonable){
-            f.createEffectVec();
-        }
+        //if(type_of_ordering == LMOrdering::Greedy){
+        f.createGreedyPreconsVec();
+        //} else if(type_of_ordering == LMOrdering::Natural){
+        f.createEffectVec();
+        //}
+        f.createReasonablePreconsVec();
     }
     return f;
 
@@ -585,11 +602,12 @@ create_action_lm(std::vector<string> &arguments, bool and_con, int num_of_preds,
         f.createOtherPreds();
     }
     if (is_in_ordering) {
-        if(type_of_ordering == LMOrdering::Greedy){
-            f.createPreconsVec();
-        } else if(type_of_ordering == LMOrdering::Reasonable){
-            f.createEffectVec();
-        }
+        //if(type_of_ordering == LMOrdering::Greedy){
+        f.createGreedyPreconsVec();
+        //} else if(type_of_ordering == LMOrdering::Natural){
+        f.createEffectVec();
+        //}
+        f.createReasonablePreconsVec();
     }
     return f;
 }

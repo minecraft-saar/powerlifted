@@ -42,7 +42,7 @@ int main(int argc, char *argv[]) {
         exit(-1);
     }
 
-    cout << "IMPORTANT: Assuming that negative effects are always listed first. "
+    cout << "IMPORTANT: Assuming that negative effects_nat_order are always listed first. "
             "(This is guaranteed by the default translator.)" << endl;
 
     //parsing the landmarks if any
@@ -52,7 +52,7 @@ int main(int argc, char *argv[]) {
         task.using_landmarks = true;
         cout << "Trying to parse landmarks" << endl;
         parse_landmarks(lm_file, task, task.type_of_lm_ordering);
-        task.initial_state.set_initial_landmarks(task.fact_landmarks, task.type_of_lm_ordering);
+        task.initial_state.set_initial_landmarks(task.fact_landmarks);
     } else {
         task.using_landmarks = false;
     }

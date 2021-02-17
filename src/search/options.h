@@ -85,8 +85,8 @@ public:
     }
 
     const LMOrdering get_landmark_ordering() const {
-        if(landmark_ordering == "ro"){
-            return LMOrdering::Reasonable;
+        if(landmark_ordering == "nat"){
+            return LMOrdering::Natural;
         } else if(landmark_ordering == "gno"){
             return LMOrdering::Greedy;
         } else {
