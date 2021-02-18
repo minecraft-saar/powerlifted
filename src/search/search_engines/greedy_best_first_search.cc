@@ -45,18 +45,28 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
             continue;
         }
         //cout << "Node is being expanded, heuristic value: " << h << endl;
-        node.close();
+        //node.close();
         statistics.report_f_value_progress(h); // In GBFS f = h.
         statistics.inc_expanded();
 
         if (h < heuristic_layer) {
+
             heuristic_layer = h;
             cout << "New heuristic value expanded: h=" << h
                  << " [expansions: " << statistics.get_expanded()
                  << ", evaluations: " << statistics.get_evaluations()
                  << ", generations: " << statistics.get_generated()
                  << ", time: " << double(clock() - timer_start) / CLOCKS_PER_SEC << "]" << '\n';
+            /*auto plan = space.extract_plan(node);
+            for (const LiftedOperatorId &a:plan) {
+                std::cout << task.actions[a.get_index()].get_name() << " ";
+                for (const int obj : a.get_instantiation()) {
+                    std::cout << task.objects[obj].getName() << " ";
+                }
+                std::cout << std::endl;
+            }*/
         }
+        node.close();
         assert(sid.id() >= 0 && (unsigned) sid.id() < space.size());
 
         DBState state = packer.unpack(space.get_state(sid));
@@ -70,7 +80,6 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
 
             for (const LiftedOperatorId& op_id:applicable) {
                 DBState s = generator.generate_successor(op_id, action, state);
-
                 //handeling landmark tracking
                 if(task.using_landmarks) {
                     s.set_landmarks(state, action,

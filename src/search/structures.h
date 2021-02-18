@@ -108,28 +108,31 @@ public:
     std::string name;
     unsigned int arity;
     bool negated;
-    int index;
+    int pred_index;
+    int lm_index;
     std::vector<Argument> arguments;
     bool and_lm;
     bool is_goal;
     bool is_action;
-    int num_of_greedy_effects;
-    int num_of_natural_precons;
+    int num_of_greedy_effects = 0;
+    int num_of_natural_precons = 0;
     bool is_true_now = false;
     bool was_true_last_step = false;
+    bool needs_check = true;
     // unfullfilledPrecons is only relevant if there are Landmark Orderings
-    std::optional <std::vector<LandmarkObj*>> precons_greedy_order = std::nullopt;
-    std::optional <std::vector<LandmarkObj*>> precons_reasonable_order = std::nullopt;
-    std::optional <std::vector<LandmarkObj*>> effects_nat_order = std::nullopt;
+    std::optional <std::vector<int>> precons_greedy_order = std::nullopt;
+    std::optional <std::vector<int>> precons_reasonable_order = std::nullopt;
+    std::optional <std::vector<int>> effects_nat_order = std::nullopt;
     std::optional <std::vector<LandmarkObj>> other_preds = std::nullopt;
 
-    LandmarkObj(std::string &name, int arity, bool negated, int index, std::vector<Argument> &tuples, bool andlm, bool isGoal, bool isAction) :
-            name(std::move(name)), arity(arity), negated(negated), index(index), arguments(std::move(tuples)), and_lm(andlm), is_goal(isGoal), is_action(isAction) , num_of_greedy_effects(0){}
+    LandmarkObj(int lmIndex, std::string &name, int arity, bool negated, int index, std::vector<Argument> &tuples, bool andlm, bool isGoal, bool isAction) :
+            name(std::move(name)), arity(arity), negated(negated),  pred_index(index), lm_index(lmIndex), arguments(std::move(tuples)), and_lm(andlm), is_goal(isGoal), is_action(isAction) , num_of_greedy_effects(0){}
 
     LandmarkObj(const LandmarkObj &to_copy){
         name = to_copy.name;
         arity = to_copy.arity;
-        index = to_copy.index;
+        pred_index = to_copy.pred_index;
+        lm_index = to_copy.lm_index;
         arguments = to_copy.arguments;
         and_lm = to_copy.and_lm;
         is_goal = to_copy.is_goal;
@@ -138,6 +141,7 @@ public:
         num_of_natural_precons = to_copy.num_of_natural_precons;
         is_true_now = to_copy.is_true_now;
         was_true_last_step = to_copy.was_true_last_step;
+        needs_check = to_copy.needs_check;
         precons_greedy_order = to_copy.precons_greedy_order;
         precons_reasonable_order = to_copy.precons_reasonable_order;
         effects_nat_order = to_copy.effects_nat_order;
@@ -146,17 +150,16 @@ public:
 
     void createEffectVec() {
         if (!effects_nat_order.has_value()){
-            effects_nat_order = std::vector<LandmarkObj *>();
+            effects_nat_order = std::vector<int>();
         } else {
             std::cout << "Effect Vector of Landmark already exists" << std::endl ;
             exit(1);
         }
     }
 
-    void addEffect(LandmarkObj *lm){
+    void addEffect(int lm){
         if (effects_nat_order.has_value()){
-            std::vector<LandmarkObj*> vec = effects_nat_order.value();
-            vec.push_back(lm);
+            effects_nat_order->push_back(lm);
         } else {
             std::cout << "Effect Vector of Landmark does not exist" << std::endl ;
             exit(1);
@@ -165,17 +168,16 @@ public:
 
     void createGreedyPreconsVec() {
         if (!precons_greedy_order.has_value()){
-            precons_greedy_order = std::vector<LandmarkObj *>();
+            precons_greedy_order = std::vector<int>();
         } else {
             std::cout << " Greedy Precons Vector of Landmark already exists" << std::endl ;
             exit(1);
         }
     }
 
-    void addGreedyPrecon(LandmarkObj *lm){
+    void addGreedyPrecon(int lm){
         if (precons_greedy_order.has_value()){
-            std::vector<LandmarkObj*> vec = precons_greedy_order.value();
-            vec.push_back(lm);
+            precons_greedy_order->push_back(lm);
         } else {
             std::cout << "Greedy Precon Vector of Landmark does not exist" << std::endl ;
             exit(1);
@@ -184,17 +186,16 @@ public:
 
     void createReasonablePreconsVec() {
         if (!precons_reasonable_order.has_value()){
-            precons_reasonable_order = std::vector<LandmarkObj *>();
+            precons_reasonable_order = std::vector<int>();
         } else {
             std::cout << "Reasonable Precons Vector of Landmark already exists" << std::endl ;
             exit(1);
         }
     }
 
-    void addReasonablePrecon(LandmarkObj *lm){
+    void addReasonablePrecon(int lm){
         if (precons_reasonable_order.has_value()){
-            std::vector<LandmarkObj*> vec = precons_reasonable_order.value();
-            vec.push_back(lm);
+            precons_reasonable_order->push_back(lm);
         } else {
             std::cout << "Reasonable Precon Vector of Landmark does not exist" << std::endl ;
             exit(1);
@@ -216,8 +217,7 @@ public:
 
     void addOtherPred(LandmarkObj pred){
         if(other_preds.has_value()){
-            std::vector<LandmarkObj> preds = other_preds.value();
-            preds.push_back(pred);
+            other_preds->push_back(pred);
         } else {
             std::cout << "OtherPreds Vector of Landmark does not exist" << std::endl ;
             exit(1);
@@ -225,7 +225,7 @@ public:
     }
 
     bool operator==(const LandmarkObj& rhs){
-        if(this->index == rhs.index){
+        if(this->pred_index == rhs.pred_index){
             if(this->negated != rhs.negated){
                 return false;
             }

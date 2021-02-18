@@ -34,7 +34,7 @@ public:
   std::vector<ActionSchema> actions;
   std::vector<std::string> type_names;
   std::unordered_set<int> nullary_predicates;
-  std::vector<LandmarkObj> fact_landmarks;
+  std::unordered_map<int, LandmarkObj> fact_landmarks;
   bool using_landmarks;
   LMOrdering type_of_lm_ordering;
 

@@ -44,12 +44,12 @@ public:
         if (!task.is_goal(state)) return false;
         std::cout << "Number of Predicate Landmarks in goal: " << state.num_of_predicate_landmarks() << " Number of fullfilled goal Landmarks: " << state.num_of_fullfilled_goals() << std::endl;
         if(state.num_of_predicate_landmarks()-state.num_of_fullfilled_goals()!=0){
-            for(auto landmark : state.get_predicate_landmarks()){
-                std::cout << landmark.name << " " ;
-                for(auto arg : landmark.arguments){
+            for(auto landmark : state.predicate_landmarks){
+                std::cout << landmark.second.name << " " ;
+                for(auto arg : landmark.second.arguments){
                     std::cout << arg.index << " ";
                 }
-                std::cout << " is fullfilled: " << landmark.is_true_now << " is Goal: " << landmark.is_goal << std::endl ;
+                std::cout << " is fullfilled: " << landmark.second.was_true_last_step << " is Goal: " << landmark.second.is_goal << " num of greedy effects : " << landmark.second.num_of_greedy_effects << std::endl ;
             }
             int unfullfilled = state.num_of_predicate_landmarks()-state.num_of_fullfilled_goals();
             std::cout << unfullfilled << " Unfullfilled Landmarks in Goal" << std::endl;

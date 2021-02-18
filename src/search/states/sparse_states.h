@@ -40,7 +40,7 @@ public:
     std::vector<std::vector<long>> packed_relations;
     std::vector<int> predicate_symbols;
     std::vector<bool> nullary_atoms;
-    std::vector<LandmarkObj> predicate_landmarks;
+    std::unordered_map<int, LandmarkObj> predicate_landmarks;
     int fullfilled_goals;
 
     bool operator==(const SparsePackedState &b) const;
