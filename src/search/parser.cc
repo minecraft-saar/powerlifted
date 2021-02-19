@@ -459,14 +459,20 @@ void parse_landmarks(std::string input_file, Task &task, LMOrdering parse_orderi
         //LandmarkObj secondLMFact = task.fact_landmarks.at(indexSecondLM);
 
         if(type_of_ordering == LMOrdering::Greedy){
-            //firstLMFact.addEffect(&secondLMFact);
+            //firstLMFact.addNaturalEffect(&secondLMFact);
             task.fact_landmarks.at(indexFirstLm).num_of_greedy_effects++;
+            task.fact_landmarks.at(indexFirstLm).can_have_greedy_effects = true;
+            task.fact_landmarks.at(indexSecondLM).createGreedyPreconsVec();
             task.fact_landmarks.at(indexSecondLM).addGreedyPrecon(task.fact_landmarks.at(indexFirstLm).lm_index);
         } else if(type_of_ordering == LMOrdering::Natural){
-            task.fact_landmarks.at(indexFirstLm).addEffect(task.fact_landmarks.at(indexSecondLM).lm_index);
-            task.fact_landmarks.at(indexSecondLM).num_of_natural_precons++;
+            task.fact_landmarks.at(indexFirstLm).num_of_natural_effects++;
+            task.fact_landmarks.at(indexSecondLM).createNaturalPreconsVec();
+            task.fact_landmarks.at(indexSecondLM).addNaturalPrecon(task.fact_landmarks.at(indexFirstLm).lm_index);
         } else if(type_of_ordering == LMOrdering::Reasonable){
+            task.fact_landmarks.at(indexFirstLm).num_of_reasonable_effects++;
+            task.fact_landmarks.at(indexSecondLM).createReasonablePreconsVec();
             task.fact_landmarks.at(indexSecondLM).addReasonablePrecon(task.fact_landmarks.at(indexFirstLm).lm_index);
+
         } else {
             std::cout << "Unkown type of ordering entered " << line << std::endl;
             exit(-1);
@@ -556,14 +562,14 @@ create_fact_lm(int lm_index, std::vector<std::string> &arguments, bool and_con, 
     if (num_of_preds > 1) {
         f.createOtherPreds();
     }
-    if (is_in_ordering) {
+    //if (is_in_ordering) {
         //if(type_of_ordering == LMOrdering::Greedy){
-        f.createGreedyPreconsVec();
+        //f.createGreedyPreconsVec();
         //} else if(type_of_ordering == LMOrdering::Natural){
-        f.createEffectVec();
+        //f.createNaturalEffectVec();
         //}
-        f.createReasonablePreconsVec();
-    }
+        //f.createReasonableEffectsVec();
+    //}
     return f;
 
     //cout << "setting Landmark Name: " << f.name << endl;
@@ -601,13 +607,13 @@ create_action_lm(int lm_index, std::vector<string> &arguments, bool and_con, int
     if (num_of_preds > 1) {
         f.createOtherPreds();
     }
-    if (is_in_ordering) {
+    //if (is_in_ordering) {
         //if(type_of_ordering == LMOrdering::Greedy){
-        f.createGreedyPreconsVec();
+        //f.createGreedyPreconsVec();
         //} else if(type_of_ordering == LMOrdering::Natural){
-        f.createEffectVec();
+        //f.createNaturalEffectVec();
         //}
-        f.createReasonablePreconsVec();
-    }
+        //f.createReasonableEffectsVec();
+    //}
     return f;
 }

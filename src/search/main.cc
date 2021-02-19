@@ -42,7 +42,7 @@ int main(int argc, char *argv[]) {
         exit(-1);
     }
 
-    cout << "IMPORTANT: Assuming that negative effects_nat_order are always listed first. "
+    cout << "IMPORTANT: Assuming that negative precons_nat_order are always listed first. "
             "(This is guaranteed by the default translator.)" << endl;
 
     //parsing the landmarks if any

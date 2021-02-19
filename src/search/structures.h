@@ -114,15 +114,18 @@ public:
     bool and_lm;
     bool is_goal;
     bool is_action;
+    bool can_have_greedy_effects = false;
     int num_of_greedy_effects = 0;
-    int num_of_natural_precons = 0;
+    int num_of_natural_effects = 0;
+    int num_of_reasonable_effects = 0;
     bool is_true_now = false;
     bool was_true_last_step = false;
     bool needs_check = true;
+    bool was_checked_this_round = false;
     // unfullfilledPrecons is only relevant if there are Landmark Orderings
     std::optional <std::vector<int>> precons_greedy_order = std::nullopt;
     std::optional <std::vector<int>> precons_reasonable_order = std::nullopt;
-    std::optional <std::vector<int>> effects_nat_order = std::nullopt;
+    std::optional <std::vector<int>> precons_nat_order = std::nullopt;
     std::optional <std::vector<LandmarkObj>> other_preds = std::nullopt;
 
     LandmarkObj(int lmIndex, std::string &name, int arity, bool negated, int index, std::vector<Argument> &tuples, bool andlm, bool isGoal, bool isAction) :
@@ -137,29 +140,31 @@ public:
         and_lm = to_copy.and_lm;
         is_goal = to_copy.is_goal;
         is_action = to_copy.is_action;
+        can_have_greedy_effects = to_copy.can_have_greedy_effects;
         num_of_greedy_effects = to_copy.num_of_greedy_effects;
-        num_of_natural_precons = to_copy.num_of_natural_precons;
+        num_of_natural_effects = to_copy.num_of_natural_effects;
+        num_of_reasonable_effects = to_copy.num_of_reasonable_effects;
         is_true_now = to_copy.is_true_now;
         was_true_last_step = to_copy.was_true_last_step;
         needs_check = to_copy.needs_check;
+        was_checked_this_round = to_copy.was_checked_this_round;
         precons_greedy_order = to_copy.precons_greedy_order;
         precons_reasonable_order = to_copy.precons_reasonable_order;
-        effects_nat_order = to_copy.effects_nat_order;
+        precons_nat_order = to_copy.precons_nat_order;
         other_preds = to_copy.other_preds;
     }
 
-    void createEffectVec() {
-        if (!effects_nat_order.has_value()){
-            effects_nat_order = std::vector<int>();
+    void createNaturalPreconsVec() {
+        if (!precons_nat_order.has_value()){
+            precons_nat_order = std::vector<int>();
         } else {
-            std::cout << "Effect Vector of Landmark already exists" << std::endl ;
-            exit(1);
+            return;
         }
     }
 
-    void addEffect(int lm){
-        if (effects_nat_order.has_value()){
-            effects_nat_order->push_back(lm);
+    void addNaturalPrecon(int lm){
+        if (precons_nat_order.has_value()){
+            precons_nat_order->push_back(lm);
         } else {
             std::cout << "Effect Vector of Landmark does not exist" << std::endl ;
             exit(1);
@@ -170,8 +175,7 @@ public:
         if (!precons_greedy_order.has_value()){
             precons_greedy_order = std::vector<int>();
         } else {
-            std::cout << " Greedy Precons Vector of Landmark already exists" << std::endl ;
-            exit(1);
+            return;
         }
     }
 
@@ -188,8 +192,7 @@ public:
         if (!precons_reasonable_order.has_value()){
             precons_reasonable_order = std::vector<int>();
         } else {
-            std::cout << "Reasonable Precons Vector of Landmark already exists" << std::endl ;
-            exit(1);
+            return;
         }
     }
 

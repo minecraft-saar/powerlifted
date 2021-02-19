@@ -12,7 +12,6 @@ void DBState::add_tuple(int relation, const GroundAtom &args) {
     relations[relation].tuples.insert(args);
 }
 
-
 std::size_t hash_value(const DBState &s) {
     std::size_t seed = 0;
     for (bool b : s.nullary_atoms) {
@@ -37,116 +36,107 @@ std::size_t hash_value(const DBState &s) {
 
 void DBState::set_landmarks(DBState parent, ActionSchema action, const LiftedOperatorId &op_id) {
     this->predicate_landmarks.insert(parent.predicate_landmarks.begin(), parent.predicate_landmarks.end());
-    //for (auto &landmark : parent.predicate_landmarks)
-    //    this->predicate_landmarks.push_back(landmark);
 
     std::vector<int> to_delete;
     std::vector<int> to_add;
-    for (auto& pair_index_lm : predicate_landmarks) {
-        LandmarkObj& landmark = pair_index_lm.second;
+    for (auto &pair_index_lm : predicate_landmarks) {
+        LandmarkObj &landmark = pair_index_lm.second;
         bool needs_check = landmark.needs_check;
-
-        if(!needs_check && !pair_index_lm.second.is_true_now){
+        if (!needs_check && !pair_index_lm.second.was_checked_this_round && landmark.can_have_greedy_effects) {
             //we don't actually care about the presence right now, but if landmark is reinserted we might care about was_true value
             num_of_fullfilled_goal_lms++;
             pair_index_lm.second.is_true_now = check_presence_of_fact_lm(pair_index_lm.second);
+            pair_index_lm.second.was_checked_this_round = true;
             continue;
         }
-        if(!needs_check){
+        if (!needs_check) {
+            if (landmark.num_of_natural_effects == 0 && landmark.num_of_reasonable_effects == 0) {
+                if(!landmark.can_have_greedy_effects){
+                    to_delete.push_back(landmark.lm_index);
+                }
+            } else {
+                num_of_fullfilled_goal_lms++;
+            }
             continue;
         }
         bool is_present = false;
-        //check reasonable orderings cannot be done inside check_presence_of_factlm since actionLms can be precon
-        if (landmark.precons_reasonable_order.has_value()) {
-            std::vector<int> precons = landmark.precons_reasonable_order.value();
-            std::vector<int> precons_to_delete;
-            for (int precon_index : precons) {
-                bool precon_is_present;
-                LandmarkObj precon_lm = predicate_landmarks.find(precon_index)->second;
-                if (precon_lm.is_action) {
-                    precon_is_present = action_lm_equal_to_action(precon_lm, action, op_id);;
-                } else {
-                    precon_is_present = precon_lm.was_true_last_step;//check_presence_of_fact_lm(precon_lm);
-                }
-                if (precon_is_present) {
-                    precons_to_delete.push_back(precon_index);
-                }
-            }
-            for (auto index : precons_to_delete) {
-                pair_index_lm.second.precons_reasonable_order->erase(remove(pair_index_lm.second.precons_reasonable_order->begin(), pair_index_lm.second.precons_reasonable_order->end(), index));
-            }
-
-            if (!pair_index_lm.second.precons_reasonable_order->empty()) {
-                needs_check = false;
-                is_present = false;
-            }
+        if (landmark.is_action) {
+            is_present = action_lm_equal_to_action(landmark, action, op_id);
+        } else {
+            is_present = check_presence_of_fact_lm(landmark);
         }
-        if (needs_check) {
-            if (landmark.is_action) {
-                is_present = action_lm_equal_to_action(landmark, action, op_id);
-            } else {
-                is_present = check_presence_of_fact_lm(landmark);
-            }
-        }
+        landmark.was_checked_this_round = true;
         if (is_present) {
             pair_index_lm.second.is_true_now = true;
-            // If the landmark has preconditions, we can now remove them from our list
-            // To not break the current for-loop we add them to to_delete vector and delete them after the loop
-            if (landmark.precons_greedy_order.has_value()) {
-                if(!landmark.was_true_last_step){
-                    std::vector<int> precons = landmark.precons_greedy_order.value();
-                    for (auto precon_landmark : precons) {
-                        auto& found_precon = predicate_landmarks.find(precon_landmark)->second;
-                        found_precon.num_of_greedy_effects--;
-                        if (found_precon.num_of_greedy_effects == 0) {
-                            found_precon.needs_check = false;
-                            if(!found_precon.is_true_now){
-                                if(found_precon.precons_greedy_order->size() !=0){
-                                    for(auto elem : found_precon.precons_greedy_order.value()){
+            // We meed to do some maintance of greedy effects if the landmark was false before and became true
+            // If this was the only (remaining) effect the precondition had we now no longer need to check the precon
+            // If the precon was already checked this loop and found false it could have reinserted its own precons,
+            // since it (thought it) needs to become true again, this may no longer be the case, so we need to clean up
+            if (landmark.precons_greedy_order.has_value() && !landmark.was_true_last_step) {
+                std::vector<int> precons = landmark.precons_greedy_order.value();
+                for (auto precon_landmark : precons) {
+                    auto &found_precon = predicate_landmarks.find(precon_landmark)->second;
+                    found_precon.num_of_greedy_effects--;
+                    if (found_precon.num_of_greedy_effects == 0) {
+                        found_precon.needs_check = false;
+                        if (!found_precon.was_checked_this_round) {
+                            found_precon.was_checked_this_round = true;
+                            num_of_fullfilled_goal_lms++;
+                        } else {
+                            //was checked and found false, so added its precons to reinsert list, need to rectify this
+                            if (!found_precon.is_true_now) {
+                                if (found_precon.precons_greedy_order.has_value()) {
+                                    for (auto elem : found_precon.precons_greedy_order.value()) {
                                         auto it = std::find(to_add.begin(), to_add.end(), elem);
-                                        if(it != to_add.end()){
+                                        if (it != to_add.end()) {
                                             predicate_landmarks.at(elem).num_of_greedy_effects--;
                                             to_add.erase(it);
                                         }
                                     }
                                 }
-                                found_precon.is_true_now = true;
                                 num_of_fullfilled_goal_lms++;
                             }
-                            //to_delete.push_back(precon_landmark);
                         }
+                        //to_delete.push_back(precon_landmark);
                     }
                 }
             }
-            //if the landmrk still has effects_nat_order we need to keep it since effects_nat_order can only become true if their premise was true in the last step
+
+            //if the landmrk still has greedy precons we need to keep it since greedy effects can only become true if their premise was true in the last step
             if (landmark.num_of_greedy_effects != 0) {
                 num_of_fullfilled_goal_lms++;
                 continue;
             }
-
-            if (landmark.effects_nat_order.has_value()) {
-                std::vector<int> effects = landmark.effects_nat_order.value();
-                for (auto effect_index : effects) {
-                    predicate_landmarks.find(effect_index)->second.num_of_natural_precons--;
-                }
-                pair_index_lm.second.effects_nat_order->clear();
+            if (landmark.num_of_natural_effects != 0 && !landmark.is_goal) {
+                //need to keep the landmark for now to check the effects, but we don't care about it becoming false again
+                //so we don't need to check it in future states
+                landmark.needs_check = false;
+                num_of_fullfilled_goal_lms++;
+                continue;
             }
-
+            if (landmark.num_of_reasonable_effects != 0 && !landmark.is_goal) {
+                //need to keep the landmark for now to check the effects, but we don't care about it becoming false again
+                //so we don't need to check it in future states
+                landmark.needs_check = false;
+                num_of_fullfilled_goal_lms++;
+                continue;
+            }
 
             //Goal Landmarks are never deleted
             if (landmark.is_goal) {
                 num_of_fullfilled_goal_lms++;
             } else {
-                //this landmark is true but is neither a goal nor has any effects_nat_order
+                //this landmark is true but is neither a goal nor has any effects
                 to_delete.push_back(pair_index_lm.first);
             }
-            //landmark is not present
         } else {
-            if(landmark.was_true_last_step){
+            //landmark is not present
+            if (landmark.was_true_last_step) {
                 if (landmark.precons_greedy_order.has_value()) {
-                    for(auto precons_index : landmark.precons_greedy_order.value()){
-                        std::vector<int> tmp = check_precons_for_reinsertion(predicate_landmarks.at(precons_index), to_add);
-                        for(auto elem : tmp){
+                    for (auto precons_index : landmark.precons_greedy_order.value()) {
+                        std::vector<int> tmp = check_precons_for_reinsertion(predicate_landmarks.at(precons_index),
+                                                                             to_add);
+                        for (auto elem : tmp) {
                             to_add.push_back(elem);
                         }
                     }
@@ -156,117 +146,40 @@ void DBState::set_landmarks(DBState parent, ActionSchema action, const LiftedOpe
         }
     }
 
-
-
-    //delete landmarks that were keep because they were preconditions, but are no longer needed
-    for (auto& landmark : to_delete) {
+    // delete landmarks that were keep because they had effects
+    // and landmarks that don't have effects and simply became true
+    for (auto &landmark : to_delete) {
         auto it = find(to_add.begin(), to_add.end(), landmark);
-        if(it != to_add.end()){
+        if (it != to_add.end()) {
             continue;
         }
         predicate_landmarks.erase(landmark);
     }
     to_delete.clear();
-
-    for(auto &landmark : to_add){
+    for (auto &landmark : to_add) {
         predicate_landmarks.find(landmark)->second.needs_check = true;
     }
-
     //update truth values for future use
-    for (auto& pair : predicate_landmarks) {
+    for (auto &pair : predicate_landmarks) {
         pair.second.was_true_last_step = pair.second.is_true_now;
         pair.second.is_true_now = false;
+        pair.second.was_checked_this_round = false;
     }
-
 }
-
-std::vector<int> DBState::check_precons_for_reinsertion(LandmarkObj lm, std::vector<int> to_add){
-    if(lm.is_action){
-        //something strange is happening, actions should not be greedy preconditions
-        std::cout << "action is greedy precondition!" << std::endl;
-        exit(-1);
-        /*lm.num_of_greedy_effects++;
-        to_add.push_back(lm);
-        if (lm.precons_greedy_order.has_value()) {
-            std::vector<LandmarkObj *> precons = lm.precons_greedy_order.value();
-            for (auto precon_landmark : precons) {
-                check_precons_for_reinsertion(*precon_landmark, to_add);
-            }
-        }
-        return to_add;*/
-    } else {
-        auto it = predicate_landmarks.find(lm.lm_index);
-        if(it != predicate_landmarks.end()){
-            it->second.num_of_greedy_effects++;
-        } else {
-            std::cout << "Problem in check Precons" << endl;
-            exit(-1);
-        }
-        to_add.push_back(lm.lm_index);
-        bool is_present = check_presence_of_fact_lm(lm);
-        if(!is_present){
-            if (lm.precons_greedy_order.has_value()) {
-                std::vector<int> precons = lm.precons_greedy_order.value();
-                for (auto precon_landmark : precons) {
-                    auto precon_pair = predicate_landmarks.find(precon_landmark);
-                    std::vector<int> tmp = check_precons_for_reinsertion(precon_pair->second, to_add);
-                    for(auto elem : tmp){
-                        to_add.push_back(elem);
-                    }
-                }
-            }
-        }
-        return to_add;
-    }
-
-}
-
 
 void DBState::set_initial_landmarks(std::unordered_map<int, LandmarkObj> input_predicate_landmarks) {
     std::vector<int> reduce_natural_precons;
+    std::vector<int> reduce_reasonable_precons;
     for (auto pair_index_lm : input_predicate_landmarks) {
         LandmarkObj landmark = pair_index_lm.second;
         //check reasonable orderings cannot be done inside check_presence_of_factlm since actionLms can be precon
-        if (pair_index_lm.second.precons_reasonable_order.has_value()) {
-            std::vector precons = pair_index_lm.second.precons_reasonable_order.value();
-            std::vector<int> precons_to_delete;
-            for (auto precon_index : precons) {
-                bool precon_is_present;
-                auto precon_pair_index_lm = input_predicate_landmarks.find(precon_index);
-                if (precon_pair_index_lm->second.is_action) {
-                    precon_is_present = false;
-                } else {
-                    if(pair_index_lm.second.precons_greedy_order.has_value()){
-                        if(pair_index_lm.second.precons_greedy_order->size()!= 0){
-                            precon_is_present = false;
-                        } else {
-                            precon_is_present = check_presence_of_fact_lm(precon_pair_index_lm->second);
-                        }
-                    } else {
-                        precon_is_present = check_presence_of_fact_lm(precon_pair_index_lm->second);
-
-                    }
-                }
-                if (precon_is_present) {
-                    precons_to_delete.push_back(precon_index);
-                }
-            }
-            for (auto index : precons_to_delete) {
-                remove(pair_index_lm.second.precons_reasonable_order->begin(), pair_index_lm.second.precons_reasonable_order->end(), index);
-            }
-            if (!precons.empty()) {
-                predicate_landmarks.insert(pair_index_lm);
-                continue;
-            }
-        }
-
 
         bool is_present;
         if (pair_index_lm.second.is_action) {
             is_present = false;
         } else {
-            if(pair_index_lm.second.precons_greedy_order.has_value()){
-                if(pair_index_lm.second.precons_greedy_order->size()!= 0){
+            if (pair_index_lm.second.precons_greedy_order.has_value()) {
+                if (pair_index_lm.second.precons_greedy_order->size() != 0) {
                     is_present = false;
                 } else {
                     is_present = check_presence_of_fact_lm(pair_index_lm.second);
@@ -277,8 +190,8 @@ void DBState::set_initial_landmarks(std::unordered_map<int, LandmarkObj> input_p
             }
         }
         //greedy necessary ordering
-
-        if ((is_present && pair_index_lm.second.is_goal) || (is_present && pair_index_lm.second.num_of_greedy_effects != 0)) {
+        if ((is_present && pair_index_lm.second.is_goal) ||
+            (is_present && pair_index_lm.second.num_of_greedy_effects != 0)) {
             num_of_fullfilled_goal_lms++;
             pair_index_lm.second.is_true_now = true;
             //pair_index_lm.second.needs_check = false;
@@ -286,12 +199,19 @@ void DBState::set_initial_landmarks(std::unordered_map<int, LandmarkObj> input_p
 
         } else if (is_present) {
             pair_index_lm.second.is_true_now = true;
-            if (pair_index_lm.second.effects_nat_order.has_value()) {
-                std::vector effects = pair_index_lm.second.effects_nat_order.value();
+            if (pair_index_lm.second.precons_nat_order.has_value()) {
+                std::vector effects = pair_index_lm.second.precons_nat_order.value();
                 for (auto lm : effects) {
                     reduce_natural_precons.push_back(lm);
                 }
-                pair_index_lm.second.effects_nat_order->clear();
+                pair_index_lm.second.precons_nat_order->clear();
+            }
+            if (pair_index_lm.second.precons_reasonable_order.has_value()) {
+                std::vector effects = pair_index_lm.second.precons_reasonable_order.value();
+                for (auto lm : effects) {
+                    reduce_reasonable_precons.push_back(lm);
+                }
+                pair_index_lm.second.precons_reasonable_order->clear();
             }
 
             if (pair_index_lm.second.is_goal) {
@@ -304,12 +224,15 @@ void DBState::set_initial_landmarks(std::unordered_map<int, LandmarkObj> input_p
         }
     }
 
-    for(auto& lm_pair : predicate_landmarks){
+    for (auto &lm_pair : predicate_landmarks) {
         lm_pair.second.was_true_last_step = lm_pair.second.is_true_now;
         lm_pair.second.is_true_now = false;
     }
-    for(auto index : reduce_natural_precons){
-        predicate_landmarks.find(index)->second.num_of_natural_precons--;
+    for (auto index : reduce_natural_precons) {
+        predicate_landmarks.find(index)->second.num_of_natural_effects--;
+    }
+    for (auto index : reduce_reasonable_precons) {
+        predicate_landmarks.find(index)->second.num_of_reasonable_effects--;
     }
 
     cout << "Initiale Fact Landmarken gesetzt. Anzahl: " << num_of_predicate_landmarks() << endl;
@@ -319,8 +242,46 @@ void DBState::set_initial_landmarks(std::unordered_map<int, LandmarkObj> input_p
 
 bool DBState::check_presence_of_fact_lm(LandmarkObj factLM) {
     bool andOrFactLm = factLM.other_preds.has_value();
+    bool precons_present = false;
+    if (factLM.precons_nat_order.has_value()) {
+        std::vector<int> precons = factLM.precons_nat_order.value();
+        std::vector<int> precons_to_delete;
+        for (auto landmark : precons) {
+            if (predicate_landmarks.at(landmark).was_true_last_step) {
+                predicate_landmarks.at(landmark).num_of_natural_effects--;
+                precons_to_delete.push_back(landmark);
+            }
+        }
+        for (auto elem : precons_to_delete) {
+            auto it = std::remove(predicate_landmarks.at(factLM.lm_index).precons_nat_order->begin(),
+                                  predicate_landmarks.at(factLM.lm_index).precons_nat_order->end(), elem);
+            predicate_landmarks.at(factLM.lm_index).precons_nat_order->erase(it);
+        }
+        if (!predicate_landmarks.at(factLM.lm_index).precons_nat_order->empty()) {
+            precons_present = true;
+        }
+    }
 
-    if (factLM.num_of_natural_precons != 0) {
+    if (factLM.precons_reasonable_order.has_value()) {
+        std::vector<int> precons = factLM.precons_reasonable_order.value();
+        std::vector<int> precons_to_delete;
+        for (auto landmark : precons) {
+            if (predicate_landmarks.at(landmark).was_true_last_step) {
+                predicate_landmarks.at(landmark).num_of_reasonable_effects--;
+                precons_to_delete.push_back(landmark);
+            }
+        }
+        for (auto elem : precons_to_delete) {
+            auto it = std::remove(predicate_landmarks.at(factLM.lm_index).precons_reasonable_order->begin(),
+                                  predicate_landmarks.at(factLM.lm_index).precons_reasonable_order->end(), elem);
+            predicate_landmarks.at(factLM.lm_index).precons_reasonable_order->erase(it);
+        }
+        if (!predicate_landmarks.at(factLM.lm_index).precons_reasonable_order->empty()) {
+            precons_present = true;
+        }
+    }
+
+    if (precons_present) {
         return false;
     }
 
@@ -375,7 +336,7 @@ bool DBState::check_presence_of_fact_lm(LandmarkObj factLM) {
                 }
             }
             //if I have already achieved this I don't care about preconditions
-            if(!factLM.was_true_last_step){
+            if (!factLM.was_true_last_step) {
                 if (factLM.precons_greedy_order.has_value()) {
                     std::vector precons = factLM.precons_greedy_order.value();
                     for (auto landmark : precons) {
@@ -385,8 +346,6 @@ bool DBState::check_presence_of_fact_lm(LandmarkObj factLM) {
                     }
                 }
             }
-
-
             return match;
         }
     }
@@ -407,15 +366,56 @@ bool DBState::check_presence_of_fact_lm(LandmarkObj factLM) {
 }
 
 bool DBState::action_lm_equal_to_action(LandmarkObj actionLm, ActionSchema action, LiftedOperatorId grounded_action) {
-    if (actionLm.num_of_natural_precons != 0) {
+    bool precons_present = false;
+    if (actionLm.precons_nat_order.has_value()) {
+        std::vector<int> precons = actionLm.precons_nat_order.value();
+        std::vector<int> precons_to_delete;
+        for (auto landmark : precons) {
+            if (predicate_landmarks.at(landmark).was_true_last_step) {
+                predicate_landmarks.at(landmark).num_of_natural_effects--;
+                precons_to_delete.push_back(landmark);
+            }
+        }
+        for (auto elem : precons_to_delete) {
+            auto it = std::remove(predicate_landmarks.at(actionLm.lm_index).precons_nat_order->begin(),
+                                  predicate_landmarks.at(actionLm.lm_index).precons_nat_order->end(), elem);
+            predicate_landmarks.at(actionLm.lm_index).precons_nat_order->erase(it);
+        }
+        if (!predicate_landmarks.at(actionLm.lm_index).precons_nat_order->empty()) {
+            precons_present = true;
+        }
+    }
+
+    if (actionLm.precons_reasonable_order.has_value()) {
+        std::vector<int> precons = actionLm.precons_reasonable_order.value();
+        std::vector<int> precons_to_delete;
+        for (auto landmark : precons) {
+            if (predicate_landmarks.at(landmark).was_true_last_step) {
+                predicate_landmarks.at(landmark).num_of_natural_effects--;
+                precons_to_delete.push_back(landmark);
+            }
+        }
+        for (auto elem : precons_to_delete) {
+            auto it = std::remove(predicate_landmarks.at(actionLm.lm_index).precons_reasonable_order->begin(),
+                                  predicate_landmarks.at(actionLm.lm_index).precons_reasonable_order->end(), elem);
+            predicate_landmarks.at(actionLm.lm_index).precons_reasonable_order->erase(it);
+        }
+        if (!predicate_landmarks.at(actionLm.lm_index).precons_reasonable_order->empty()) {
+            precons_present = true;
+        }
+    }
+    if (precons_present) {
         return false;
     }
+
     if (actionLm.precons_greedy_order.has_value()) {
         std::vector precons = actionLm.precons_greedy_order.value();
-        for (auto landmark : precons) {
-            if (!predicate_landmarks.find(landmark)->second.was_true_last_step) {
-                return false;
-            }
+        if (!precons.empty()) {
+            std::cout << "I don't think actions can have greedy precons" << std::endl;
+            exit(-1);
+            //if (!predicate_landmarks.find(landmark)->second.was_true_last_step) {
+            //    return false;
+            //}
         }
     }
 
@@ -433,6 +433,47 @@ bool DBState::action_lm_equal_to_action(LandmarkObj actionLm, ActionSchema actio
         }
     }
     return false;
+}
+
+std::vector<int> DBState::check_precons_for_reinsertion(LandmarkObj lm, std::vector<int> to_add) {
+    if (lm.is_action) {
+        //something strange is happening, actions should not be greedy preconditions
+        std::cout << "action is greedy precondition!" << std::endl;
+        exit(-1);
+        /*lm.num_of_greedy_effects++;
+        to_add.push_back(lm);
+        if (lm.precons_greedy_order.has_value()) {
+            std::vector<LandmarkObj *> precons = lm.precons_greedy_order.value();
+            for (auto precon_landmark : precons) {
+                check_precons_for_reinsertion(*precon_landmark, to_add);
+            }
+        }
+        return to_add;*/
+    } else {
+        auto it = predicate_landmarks.find(lm.lm_index);
+        if (it != predicate_landmarks.end()) {
+            it->second.num_of_greedy_effects++;
+        } else {
+            std::cout << "Problem in check Precons" << endl;
+            exit(-1);
+        }
+        to_add.push_back(lm.lm_index);
+        bool is_present = check_presence_of_fact_lm(lm);
+        if (!is_present) {
+            if (lm.precons_greedy_order.has_value()) {
+                std::vector<int> precons = lm.precons_greedy_order.value();
+                for (auto precon_landmark : precons) {
+                    auto precon_pair = predicate_landmarks.find(precon_landmark);
+                    std::vector<int> tmp = check_precons_for_reinsertion(precon_pair->second, to_add);
+                    for (auto elem : tmp) {
+                        to_add.push_back(elem);
+                    }
+                }
+            }
+        }
+        return to_add;
+    }
+
 }
 
 
@@ -477,8 +518,8 @@ bool DBState::fact_lm_equal_to_ground_effect(LandmarkObj factLM, ActionSchema ac
                         }
                     }
                     /*if (match && orderedFactLm) {
-                        std::vector effects_nat_order = factLM.effects_nat_order.value();
-                        for (auto *landmark : effects_nat_order) {
+                        std::vector precons_nat_order = factLM.precons_nat_order.value();
+                        for (auto *landmark : precons_nat_order) {
                             landmark->removePrecon();
                         }
                     }*/
