@@ -1,6 +1,8 @@
 #ifndef SEARCH_STATISTICS_H
 #define SEARCH_STATISTICS_H
 
+#include <utility>
+
 /*
   This class keeps track of search statistics.
 
@@ -10,7 +12,7 @@
 */
 
 namespace utils {
-enum class Verbosity;
+    enum class Verbosity;
 }
 
 class SearchStatistics {
@@ -27,7 +29,7 @@ class SearchStatistics {
     int generated_ops;    // no of operators that were returned as applicable
 
     // Statistics related to f values
-    int lastjump_value; //f value obtained in the last jump
+    std::pair<int, int> lastjump_value; //f value obtained in the last jump
     int lastjump_expanded_states; // same guy but at point where the last jump in the open list
     int lastjump_reopened_states; // occurred (jump == f-value of the first node in the queue increases)
     int lastjump_evaluated_states;
@@ -72,7 +74,7 @@ public:
       order in which successors are generated or the tie-breaking
       performed by the open list.)
     */
-    void report_f_value_progress(int f);
+    void report_f_value_progress(std::pair<int, int> f);
     void print_checkpoint_line(int g) const;
 
     // output

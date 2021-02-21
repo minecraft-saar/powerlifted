@@ -1,3 +1,4 @@
+/*
 #ifndef SEARCH_BREADTH_FIRST_SEARCH_H
 #define SEARCH_BREADTH_FIRST_SEARCH_H
 
@@ -20,3 +21,4 @@ public:
 
 
 #endif  // SEARCH_BREADTH_FIRST_SEARCH_H
+*/

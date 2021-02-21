@@ -19,7 +19,7 @@
 
 // Forward declarations
 class SuccessorGenerator;
-class Heuristic;
+class THeuristic;
 class Task;
 
 
@@ -30,7 +30,7 @@ public:
 
     virtual utils::ExitCode search(const Task &task,
                        SuccessorGenerator &generator,
-                       Heuristic &heuristic) = 0;
+                       THeuristic &heuristic) = 0;
 
     virtual void print_statistics() const = 0;
 

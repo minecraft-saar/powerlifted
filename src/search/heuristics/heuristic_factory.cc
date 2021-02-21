@@ -8,18 +8,16 @@
 
 #include <boost/algorithm/string.hpp>
 
-Heuristic *HeuristicFactory::create(const std::string &method, const Task &task)
+THeuristic *HeuristicFactory::create(const std::string &method, const Task &task)
 {
     std::cout << "Creating search factory..." << std::endl;
-    if (boost::iequals(method, "blind")) {
-        return new BlindHeuristic;
-    }
-    else if (boost::iequals(method, "goalcount")) {
-        return new Goalcount;
+    if (boost::iequals(method, "goalcount")) {
+        return new THeuristicImpl<Goalcount, landmark_heuristic>;
     }
     else if (boost::iequals(method, "landmark")) {
-        return new landmark_heuristic;
-    } else {
+        return new THeuristicImpl<landmark_heuristic, Goalcount>;
+    }
+    else {
         std::cerr << "Invalid heuristic \"" << method << "\"" << std::endl;
         exit(-1);
     }

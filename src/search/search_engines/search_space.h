@@ -69,7 +69,7 @@ public:
         auto result = registered_states.insert(id);
 
         if (result.second) { // It's an unseen state, create the node
-            node_data.push_back(SearchNode(StateID(id), op, parent, 0));
+            node_data.push_back(SearchNode(StateID(id), op, parent));
 
         } else { // The state was already registered
             id = result.first;

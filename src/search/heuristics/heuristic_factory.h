@@ -4,14 +4,17 @@
 #include <string>
 
 class Task;
-class Heuristic;
+class THeuristic;
+
 
 /**
  * @brief Factory class to generate corresponding heuristic object
  */
 class HeuristicFactory {
 public:
-    static Heuristic *create(const std::string& method, const Task &task);
+    static THeuristic *create(const std::string& method, const Task &task);
 };
+
+
 
 #endif //SEARCH_HEURISTIC_FACTORY_H

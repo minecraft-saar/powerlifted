@@ -10,11 +10,11 @@ class GreedyBestFirstSearch : public SearchBase {
 protected:
     SearchSpace<PackedStateT> space;
 
-    int heuristic_layer{};
+    std::pair<int, int> heuristic_layer;
 public:
     using StatePackerT = typename PackedStateT::StatePackerT;
 
-    utils::ExitCode search(const Task &task, SuccessorGenerator &generator, Heuristic &heuristic) override;
+    utils::ExitCode search(const Task &task, SuccessorGenerator &generator, THeuristic &heuristic) override;
 
     void print_statistics() const override;
 };

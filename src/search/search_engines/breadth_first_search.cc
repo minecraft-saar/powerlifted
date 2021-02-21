@@ -1,4 +1,4 @@
-
+/*
 #include "breadth_first_search.h"
 #include "../states/extensional_states.h"
 #include "../states/sparse_states.h"
@@ -15,7 +15,7 @@ using namespace std;
 template <class PackedStateT>
 utils::ExitCode BreadthFirstSearch<PackedStateT>::search(const Task &task,
                                              SuccessorGenerator &generator,
-                                             Heuristic &heuristic)
+                                             THeuristic &heuristic)
 {
     cout << "Starting breadth first search" << endl;
     clock_t timer_start = clock();
@@ -79,3 +79,4 @@ void BreadthFirstSearch<PackedStateT>::print_statistics() const {
 // explicit template instantiations
 template class BreadthFirstSearch<SparsePackedState>;
 template class BreadthFirstSearch<ExtensionalPackedState>;
+*/

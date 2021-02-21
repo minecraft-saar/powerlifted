@@ -5,24 +5,21 @@
 #include <map>
 
 struct CompareGBFSEntries {
-    bool operator()(const std::pair<int, int> &lhs, const std::pair<int, int> &rhs) const {
-        if (lhs.first != rhs.first) {
-            return lhs.first < rhs.first;
-        }
-        return lhs.second < rhs.second;
+    bool operator()(const std::pair<std::pair<int, int>, int> &lhs, const std::pair<std::pair<int, int>, int> &rhs) const {
+        return lhs < rhs;
     }
 };
 
 class GreedyOpenList {
     typedef std::deque<StateID> Bucket;
 
-    std::map<std::pair<int, int>, Bucket, CompareGBFSEntries> buckets;
+    std::map<std::pair<std::pair<int, int>, int>, Bucket, CompareGBFSEntries> buckets;
     int size;
 
 public:
     GreedyOpenList() : size(0) {}
 
-    void do_insertion(const StateID &entry, const std::pair<int, int>& key) {
+    void do_insertion(const StateID &entry, const std::pair<std::pair<int, int>, int>& key) {
         buckets[key].push_back(entry);
         ++size;
     }

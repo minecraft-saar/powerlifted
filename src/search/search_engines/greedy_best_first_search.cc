@@ -19,7 +19,7 @@ using namespace std;
 template <class PackedStateT>
 utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
                                                 SuccessorGenerator &generator,
-                                                Heuristic &heuristic)
+                                                THeuristic &heuristic)
 {
     cout << "Starting greedy best first search" << endl;
     clock_t timer_start = clock();
@@ -30,7 +30,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
     SearchNode& root_node = space.insert_or_get_previous_node(packer.pack(task.initial_state), LiftedOperatorId::no_operator, StateID::no_state);
     heuristic_layer = heuristic.compute_heuristic(task.initial_state, task);
     root_node.open(0, heuristic_layer);
-    cout << "Initial heuristic value " << heuristic_layer << endl;
+    cout << "Initial heuristic value  ("  << heuristic_layer.first << ", " << heuristic_layer.second << ")" << endl;
     statistics.report_f_value_progress(heuristic_layer);
     queue.do_insertion(root_node.state_id, make_pair(heuristic_layer, 0));
 
@@ -39,7 +39,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
     while (not queue.empty()) {
         StateID sid = queue.remove_min();
         SearchNode &node = space.get_node(sid);
-        int h = node.h;
+        std::pair<int, int> h = node.h;
         int g = node.g;
         if (node.status == SearchNode::Status::CLOSED) {
             continue;
@@ -52,19 +52,19 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
         if (h < heuristic_layer) {
 
             heuristic_layer = h;
-            cout << "New heuristic value expanded: h=" << h
+            cout << "New heuristic value expanded: h=" << "("  << h.first << ", " << h.second << ")"
                  << " [expansions: " << statistics.get_expanded()
                  << ", evaluations: " << statistics.get_evaluations()
                  << ", generations: " << statistics.get_generated()
                  << ", time: " << double(clock() - timer_start) / CLOCKS_PER_SEC << "]" << '\n';
-            auto plan = space.extract_plan(node);
+            /*auto plan = space.extract_plan(node);
             for (const LiftedOperatorId &a:plan) {
                 std::cout << task.actions[a.get_index()].get_name() << " ";
                 for (const int obj : a.get_instantiation()) {
                     std::cout << task.objects[obj].getName() << " ";
                 }
                 std::cout << std::endl;
-            }
+            }*/
         }
         node.close();
         assert(sid.id() >= 0 && (unsigned) sid.id() < space.size());
@@ -79,17 +79,6 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
             statistics.inc_generated(applicable.size());
 
             for (const LiftedOperatorId& op_id:applicable) {
-                if(action.get_name() == "pickup" && op_id.get_instantiation()[0] == 1){
-                    std::cout << "picking up block 1" << std::endl;
-                }
-
-                if(action.get_name() == "pickup" && op_id.get_instantiation()[0] == 2){
-                    std::cout << "picking up block 2" << std::endl;
-                }
-
-                if(action.get_name() == "stack" && op_id.get_instantiation()[0] == 2 && op_id.get_instantiation()[1] == 1){
-                    std::cout << "stacking block 2 on block 1" << std::endl;
-                }
                 DBState s = generator.generate_successor(op_id, action, state);
                 //handeling landmark tracking
                 if(task.using_landmarks) {
@@ -97,15 +86,8 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
                                     op_id); // op_id beinhaltet die IDs für die Action und die gegründeten Parameter
                 }
                 int dist = g + action.get_cost();
-                int new_h = heuristic.compute_heuristic(s, task);
+                std::pair<int, int> new_h = heuristic.compute_heuristic(s, task);
                 statistics.inc_evaluations();
-
-                if(action.get_name() == "pickup" && op_id.get_instantiation()[0] == 1){
-                    std::cout << " h value for picking up block 1: " << new_h << std::endl;
-                }
-                if(action.get_name() == "pickup" && op_id.get_instantiation()[0] == 2){
-                    std::cout << " h value for picking up block 2: " << new_h << std::endl;
-                }
 
                 auto& child_node = space.insert_or_get_previous_node(packer.pack(s), op_id, node.state_id);
                 if (child_node.status == SearchNode::Status::NEW) {
