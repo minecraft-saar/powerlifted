@@ -79,17 +79,7 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
             statistics.inc_generated(applicable.size());
 
             for (const LiftedOperatorId& op_id:applicable) {
-                if(action.get_name() == "pickup" && op_id.get_instantiation()[0] == 1){
-                    std::cout << "picking up block 1" << std::endl;
-                }
 
-                if(action.get_name() == "pickup" && op_id.get_instantiation()[0] == 2){
-                    std::cout << "picking up block 2" << std::endl;
-                }
-
-                if(action.get_name() == "stack" && op_id.get_instantiation()[0] == 2 && op_id.get_instantiation()[1] == 1){
-                    std::cout << "stacking block 2 on block 1" << std::endl;
-                }
                 DBState s = generator.generate_successor(op_id, action, state);
                 //handeling landmark tracking
                 if(task.using_landmarks) {
@@ -99,13 +89,6 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
                 int dist = g + action.get_cost();
                 int new_h = heuristic.compute_heuristic(s, task);
                 statistics.inc_evaluations();
-
-                if(action.get_name() == "pickup" && op_id.get_instantiation()[0] == 1){
-                    std::cout << " h value for picking up block 1: " << new_h << std::endl;
-                }
-                if(action.get_name() == "pickup" && op_id.get_instantiation()[0] == 2){
-                    std::cout << " h value for picking up block 2: " << new_h << std::endl;
-                }
 
                 auto& child_node = space.insert_or_get_previous_node(packer.pack(s), op_id, node.state_id);
                 if (child_node.status == SearchNode::Status::NEW) {
