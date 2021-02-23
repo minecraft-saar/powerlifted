@@ -58,13 +58,13 @@ utils::ExitCode GreedyBestFirstSearch<PackedStateT>::search(const Task &task,
                  << ", generations: " << statistics.get_generated()
                  << ", time: " << double(clock() - timer_start) / CLOCKS_PER_SEC << "]" << '\n';
             auto plan = space.extract_plan(node);
-            for (const LiftedOperatorId &a:plan) {
+            /*for (const LiftedOperatorId &a:plan) {
                 std::cout << task.actions[a.get_index()].get_name() << " ";
                 for (const int obj : a.get_instantiation()) {
                     std::cout << task.objects[obj].getName() << " ";
                 }
                 std::cout << std::endl;
-            }
+            }*/
         }
         node.close();
         assert(sid.id() >= 0 && (unsigned) sid.id() < space.size());
