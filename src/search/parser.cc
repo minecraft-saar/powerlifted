@@ -499,6 +499,8 @@ create_fact_lm(int lm_index, std::vector<std::string> &arguments, bool and_con, 
     std::vector<Argument> formated_args;
     for (unsigned int i = 1; i < arguments.size(); i++) {
         string name = arguments[i];
+        std::transform(name.begin(), name.end(), name.begin(),
+                       [](unsigned char c){ return std::tolower(c); });
         if (name == "???") {
             Argument arg(i - 1, false);
             formated_args.push_back(arg);
