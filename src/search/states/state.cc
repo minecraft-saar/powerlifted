@@ -51,7 +51,7 @@ void DBState::set_landmarks(DBState parent, ActionSchema action, const LiftedOpe
         }
         if (!needs_check) {
             if (landmark.num_of_natural_effects == 0 && landmark.num_of_reasonable_effects == 0) {
-                if(!landmark.can_have_greedy_effects){
+                if (!landmark.can_have_greedy_effects) {
                     to_delete.push_back(landmark.lm_index);
                 }
             } else {
@@ -131,7 +131,7 @@ void DBState::set_landmarks(DBState parent, ActionSchema action, const LiftedOpe
             }
         } else {
             //landmark is not present
-            if (landmark.was_true_last_step) {
+            /*if (landmark.was_true_last_step) {
                 if (landmark.precons_greedy_order.has_value()) {
                     for (auto precons_index : landmark.precons_greedy_order.value()) {
                         std::vector<int> tmp = check_precons_for_reinsertion(predicate_landmarks.at(precons_index),
@@ -141,7 +141,7 @@ void DBState::set_landmarks(DBState parent, ActionSchema action, const LiftedOpe
                         }
                     }
                 }
-            }
+            }*/
             pair_index_lm.second.is_true_now = false;
         }
     }
@@ -410,9 +410,13 @@ bool DBState::action_lm_equal_to_action(LandmarkObj actionLm, ActionSchema actio
 
     if (actionLm.precons_greedy_order.has_value()) {
         std::vector precons = actionLm.precons_greedy_order.value();
-        if (!precons.empty()) {
-            std::cout << "I don't think actions can have greedy precons" << std::endl;
-            exit(-1);
+        for (auto landmark : precons) {
+            if (!predicate_landmarks.find(landmark)->second.was_true_last_step) {
+                return false;
+            }
+            //if (!precons.empty()) {
+            //    std::cout << "I don't think actions can have greedy precons" << std::endl;
+            //    exit(-1);
             //if (!predicate_landmarks.find(landmark)->second.was_true_last_step) {
             //    return false;
             //}

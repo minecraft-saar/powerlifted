@@ -444,10 +444,10 @@ void parse_landmarks(std::string input_file, Task &task, LMOrdering parse_orderi
         int indexFirstLm, indexSecondLM, ordering_type;
         line_as_stream >> indexFirstLm >> std::ws >> indexSecondLM >> std::ws >> ordering_type;
         LMOrdering type_of_ordering;
-        if(ordering_type == 0 && parse_ordering == LMOrdering::Greedy){
+        if(ordering_type == 0){//&& parse_ordering == LMOrdering::Greedy){
             type_of_ordering = LMOrdering::Greedy;
-        } else if(ordering_type == 0 && parse_ordering == LMOrdering::Natural){
-            type_of_ordering = LMOrdering::Natural;
+        //} else if(ordering_type == 0 && parse_ordering == LMOrdering::Natural){
+        //    type_of_ordering = LMOrdering::Natural;
         } else if(ordering_type == 1){
             type_of_ordering = LMOrdering::Reasonable;
         } else if(ordering_type == 2){
